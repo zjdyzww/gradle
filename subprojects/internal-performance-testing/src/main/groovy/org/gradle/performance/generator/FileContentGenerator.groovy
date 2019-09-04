@@ -109,7 +109,7 @@ abstract class FileContentGenerator {
             }
 
             return includedProjects + """
-            if(org.gradle.util.GradleVersion.current() >= org.gradle.util.GradleVersion.version("4.6")) {
+            if(org.gradle.util.GradleVersion.current() >= org.gradle.util.GradleVersion.version("5.6")) {
             ${config.featurePreviews.collect { "enableFeaturePreview(\"$it\")" }.join("\n")}
             }
             """
@@ -120,7 +120,7 @@ abstract class FileContentGenerator {
         if (!isRoot && !config.compositeBuild) {
             return null
         }
-        """
+        """:
         org.gradle.jvmargs=-Xmxs${config.daemonMemory} -Xmx${config.daemonMemory}
         org.gradle.parallel=${config.parallel}
         org.gradle.workers.max=${config.maxWorkers}
