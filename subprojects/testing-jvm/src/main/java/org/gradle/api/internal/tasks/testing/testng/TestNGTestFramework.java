@@ -27,6 +27,7 @@ import org.gradle.api.internal.tasks.testing.TestFramework;
 import org.gradle.api.internal.tasks.testing.WorkerTestClassProcessorFactory;
 import org.gradle.api.internal.tasks.testing.detection.ClassFileExtractionManager;
 import org.gradle.api.internal.tasks.testing.filter.DefaultTestFilter;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.reporting.DirectoryReport;
 import org.gradle.api.tasks.testing.Test;
 import org.gradle.api.tasks.testing.testng.TestNGOptions;
@@ -37,6 +38,7 @@ import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.internal.time.Clock;
 import org.gradle.process.internal.worker.WorkerProcessBuilder;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.Serializable;
 import java.util.List;
@@ -49,7 +51,8 @@ public class TestNGTestFramework implements TestFramework {
     private final DefaultTestFilter filter;
     private final TestClassLoaderFactory classLoaderFactory;
 
-    public TestNGTestFramework(final Test testTask, DefaultTestFilter filter, Instantiator instantiator, ClassLoaderCache classLoaderCache) {
+    @Inject
+    public TestNGTestFramework(final Test testTask, DefaultTestFilter filter, ObjectFactory instantiator, ClassLoaderCache classLoaderCache) {
         this.testTask = testTask;
         this.filter = filter;
         options = instantiator.newInstance(TestNGOptions.class, testTask.getProject().getProjectDir());

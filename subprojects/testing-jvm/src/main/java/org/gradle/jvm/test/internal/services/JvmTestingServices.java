@@ -16,6 +16,9 @@
 
 package org.gradle.jvm.test.internal.services;
 
+import org.gradle.api.internal.tasks.testing.TestFrameworkAutoDetection;
+import org.gradle.api.internal.tasks.testing.TestFrameworkFactory;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.internal.service.ServiceRegistration;
 import org.gradle.internal.service.scopes.AbstractPluginServiceRegistry;
 import org.gradle.jvm.test.internal.JUnitTestSuiteBinaryRenderer;
@@ -24,5 +27,19 @@ public class JvmTestingServices extends AbstractPluginServiceRegistry {
     @Override
     public void registerGlobalServices(ServiceRegistration registration) {
         registration.add(JUnitTestSuiteBinaryRenderer.class);
+    }
+
+    @Override
+    public void registerProjectServices(ServiceRegistration registration) {
+        registration.addProvider(new ProjectScopeServices());
+    }
+
+    private static class ProjectScopeServices {
+        TestFrameworkFactory createTestFrameworkFactory(ObjectFactory objectFactory) {
+            return new TestFrameworkFactory(objectFactory);
+        }
+        TestFrameworkAutoDetection createTestFrameworkAutoDetection(TestFrameworkFactory testFrameworkFactory) {
+            return new TestFrameworkAutoDetection(testFrameworkFactory);
+        }
     }
 }

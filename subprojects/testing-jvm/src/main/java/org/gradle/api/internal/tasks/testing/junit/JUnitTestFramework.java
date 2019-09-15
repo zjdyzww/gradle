@@ -32,11 +32,14 @@ import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.internal.time.Clock;
 import org.gradle.process.internal.worker.WorkerProcessBuilder;
 
+import javax.inject.Inject;
+
 public class JUnitTestFramework implements TestFramework {
     private JUnitOptions options;
     private final JUnitDetector detector;
     private final DefaultTestFilter filter;
 
+    @Inject
     public JUnitTestFramework(Test testTask, DefaultTestFilter filter) {
         this.filter = filter;
         options = new JUnitOptions();

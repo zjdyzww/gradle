@@ -38,6 +38,7 @@ import org.gradle.api.internal.artifacts.configurations.ConfigurationInternal;
 import org.gradle.api.internal.artifacts.dsl.ComponentMetadataHandlerInternal;
 import org.gradle.api.internal.plugins.DslObject;
 import org.gradle.api.internal.project.ProjectInternal;
+import org.gradle.api.internal.tasks.testing.TestFrameworkAutoDetection;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.internal.DefaultJavaPluginConvention;
 import org.gradle.api.plugins.internal.DefaultJavaPluginExtension;
@@ -100,11 +101,13 @@ public class JavaBasePlugin implements Plugin<ProjectInternal> {
     );
 
     private final ObjectFactory objectFactory;
+    private final TestFrameworkAutoDetection testFrameworkAutoDetection;
     private final boolean javaClasspathPackaging;
 
     @Inject
-    public JavaBasePlugin(ObjectFactory objectFactory) {
+    public JavaBasePlugin(ObjectFactory objectFactory, TestFrameworkAutoDetection testFrameworkAutoDetection) {
         this.objectFactory = objectFactory;
+        this.testFrameworkAutoDetection = testFrameworkAutoDetection;
         this.javaClasspathPackaging = Boolean.getBoolean(COMPILE_CLASSPATH_PACKAGING_SYSTEM_PROPERTY);
     }
 
@@ -119,7 +122,7 @@ public class JavaBasePlugin implements Plugin<ProjectInternal> {
         configureCompileDefaults(project, javaConvention);
 
         configureJavaDoc(project, javaConvention);
-        configureTest(project, javaConvention);
+        configureTest(project, javaConvention, testFrameworkAutoDetection);
         configureBuildNeeded(project);
         configureBuildDependents(project);
         configureSchema(project);
@@ -421,16 +424,16 @@ public class JavaBasePlugin implements Plugin<ProjectInternal> {
         });
     }
 
-    private void configureTest(final Project project, final JavaPluginConvention convention) {
+    private void configureTest(final Project project, final JavaPluginConvention convention, TestFrameworkAutoDetection testFrameworkAutoDetection) {
         project.getTasks().withType(Test.class).configureEach(new Action<Test>() {
             @Override
             public void execute(final Test test) {
-                configureTestDefaults(test, project, convention);
+                configureTestDefaults(test, project, convention, testFrameworkAutoDetection);
             }
         });
     }
 
-    private void configureTestDefaults(final Test test, Project project, final JavaPluginConvention convention) {
+    private void configureTestDefaults(final Test test, Project project, final JavaPluginConvention convention, TestFrameworkAutoDetection testFrameworkAutoDetection) {
         DslObject htmlReport = new DslObject(test.getReports().getHtml());
         DslObject xmlReport = new DslObject(test.getReports().getJunitXml());
 
@@ -453,5 +456,7 @@ public class JavaBasePlugin implements Plugin<ProjectInternal> {
             }
         })));
         test.workingDir(project.getProjectDir());
+
+        test.getTestingFramework().convention(project.provider(() -> testFrameworkAutoDetection.assumeDefaultFor(test)));
     }
 }

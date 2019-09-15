@@ -43,6 +43,7 @@ import org.gradle.api.internal.component.BuildableJavaComponent;
 import org.gradle.api.internal.component.ComponentRegistry;
 import org.gradle.api.internal.plugins.DefaultArtifactPublicationSet;
 import org.gradle.api.internal.project.ProjectInternal;
+import org.gradle.api.internal.tasks.testing.TestFrameworkAutoDetection;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.internal.JavaConfigurationVariantMapping;
 import org.gradle.api.plugins.internal.JvmPluginsHelper;
@@ -262,11 +263,13 @@ public class JavaPlugin implements Plugin<ProjectInternal> {
 
     private final ObjectFactory objectFactory;
     private final SoftwareComponentFactory softwareComponentFactory;
+    private final TestFrameworkAutoDetection testFrameworkAutoDetection;
 
     @Inject
-    public JavaPlugin(ObjectFactory objectFactory, SoftwareComponentFactory softwareComponentFactory) {
+    public JavaPlugin(ObjectFactory objectFactory, SoftwareComponentFactory softwareComponentFactory, TestFrameworkAutoDetection testFrameworkAutoDetection) {
         this.objectFactory = objectFactory;
         this.softwareComponentFactory = softwareComponentFactory;
+        this.testFrameworkAutoDetection = testFrameworkAutoDetection;
     }
 
     @Override
@@ -281,7 +284,7 @@ public class JavaPlugin implements Plugin<ProjectInternal> {
         configureConfigurations(project, javaConvention);
 
         configureJavaDoc(javaConvention);
-        configureTest(project, javaConvention);
+        configureTest(project, javaConvention, testFrameworkAutoDetection);
         configureArchivesAndComponent(project, javaConvention);
         configureBuild(project);
 
@@ -404,7 +407,7 @@ public class JavaPlugin implements Plugin<ProjectInternal> {
         });
     }
 
-    private void configureTest(final Project project, final JavaPluginConvention pluginConvention) {
+    private void configureTest(final Project project, final JavaPluginConvention pluginConvention, TestFrameworkAutoDetection testFrameworkAutoDetection) {
         project.getTasks().withType(Test.class).configureEach(new Action<Test>() {
             @Override
             public void execute(final Test test) {
@@ -420,6 +423,7 @@ public class JavaPlugin implements Plugin<ProjectInternal> {
                         return pluginConvention.getSourceSets().getByName(SourceSet.TEST_SOURCE_SET_NAME).getRuntimeClasspath();
                     }
                 });
+                test.getTestingFramework().convention(project.provider(() -> testFrameworkAutoDetection.detect(test, project.getConfigurations().getByName(TEST_IMPLEMENTATION_CONFIGURATION_NAME))));
             }
         });
 

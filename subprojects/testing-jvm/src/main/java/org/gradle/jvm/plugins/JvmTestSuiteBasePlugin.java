@@ -27,6 +27,7 @@ import org.gradle.api.internal.artifacts.ImmutableModuleIdentifierFactory;
 import org.gradle.api.internal.artifacts.repositories.ResolutionAwareRepository;
 import org.gradle.api.internal.attributes.AttributesSchemaInternal;
 import org.gradle.api.internal.file.collections.ImmutableFileCollection;
+import org.gradle.api.internal.tasks.testing.TestFrameworkFactory;
 import org.gradle.api.tasks.testing.Test;
 import org.gradle.api.tasks.testing.TestTaskReports;
 import org.gradle.internal.Cast;
@@ -85,6 +86,7 @@ public class JvmTestSuiteBasePlugin extends RuleSource {
                 test.dependsOn(jvmAssembly);
                 test.setTestClassesDirs(ImmutableFileCollection.of(binary.getClassesDir()));
                 test.setClasspath(binary.getRuntimeClasspath());
+                test.useJUnit();
                 configureReports(binary, test);
             }
 

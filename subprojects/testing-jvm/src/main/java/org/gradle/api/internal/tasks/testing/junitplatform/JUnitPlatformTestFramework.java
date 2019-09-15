@@ -33,6 +33,7 @@ import org.gradle.internal.time.Clock;
 import org.gradle.process.internal.worker.WorkerProcessBuilder;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 
@@ -40,6 +41,7 @@ public class JUnitPlatformTestFramework implements TestFramework {
     private final JUnitPlatformOptions options;
     private final DefaultTestFilter filter;
 
+    @Inject
     public JUnitPlatformTestFramework(DefaultTestFilter filter) {
         this.filter = filter;
         this.options = new JUnitPlatformOptions();

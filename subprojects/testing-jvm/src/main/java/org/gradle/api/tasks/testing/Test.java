@@ -32,7 +32,7 @@ import org.gradle.api.internal.initialization.loadercache.ClassLoaderCache;
 import org.gradle.api.internal.tasks.testing.JvmTestExecutionSpec;
 import org.gradle.api.internal.tasks.testing.TestExecuter;
 import org.gradle.api.internal.tasks.testing.TestFramework;
-import org.gradle.api.internal.tasks.testing.TestFrameworkAutoDetection;
+import org.gradle.api.internal.tasks.testing.TestFrameworkFactory;
 import org.gradle.api.internal.tasks.testing.detection.DefaultTestExecuter;
 import org.gradle.api.internal.tasks.testing.filter.DefaultTestFilter;
 import org.gradle.api.internal.tasks.testing.junit.JUnitTestFramework;
@@ -40,6 +40,8 @@ import org.gradle.api.internal.tasks.testing.junit.result.TestClassResult;
 import org.gradle.api.internal.tasks.testing.junit.result.TestResultSerializer;
 import org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformTestFramework;
 import org.gradle.api.internal.tasks.testing.testng.TestNGTestFramework;
+import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.provider.Property;
 import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Classpath;
@@ -57,7 +59,6 @@ import org.gradle.api.tasks.testing.junitplatform.JUnitPlatformOptions;
 import org.gradle.api.tasks.testing.testng.TestNGOptions;
 import org.gradle.api.tasks.util.PatternFilterable;
 import org.gradle.internal.Actions;
-import org.gradle.internal.Cast;
 import org.gradle.internal.actor.ActorFactory;
 import org.gradle.internal.jvm.UnsupportedJavaRuntimeException;
 import org.gradle.internal.jvm.inspection.JvmVersionDetector;
@@ -147,16 +148,27 @@ public class Test extends AbstractTestTask implements JavaForkOptions, PatternFi
     private FileCollection testClassesDirs;
     private PatternFilterable patternSet;
     private FileCollection classpath;
-    private TestFramework testFramework;
+    private final Property<TestFramework> testFramework;
     private boolean scanForTestClasses = true;
     private long forkEvery;
     private int maxParallelForks = 1;
     private TestExecuter<JvmTestExecutionSpec> testExecuter;
 
     public Test() {
-        patternSet = getFileResolver().getPatternSetFactory().create();
-        forkOptions = getForkOptionsFactory().newDecoratedJavaForkOptions();
-        forkOptions.setEnableAssertions(true);
+        this.patternSet = getFileResolver().getPatternSetFactory().create();
+        this.testFramework = getObjectFactory().property(TestFramework.class);
+        this.forkOptions = getForkOptionsFactory().newDecoratedJavaForkOptions();
+        this.forkOptions.setEnableAssertions(true);
+    }
+
+    @Inject
+    protected ObjectFactory getObjectFactory() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Inject
+    protected TestFrameworkFactory getTestFrameworkFactory() {
+        throw new UnsupportedOperationException();
     }
 
     @Inject
@@ -612,11 +624,7 @@ public class Test extends AbstractTestTask implements JavaForkOptions, PatternFi
             getLogger().info("Running tests for remote debugging.");
         }
 
-        try {
-            super.executeTests();
-        } finally {
-            testFramework = null;
-        }
+        super.executeTests();
     }
 
     @Override
@@ -822,21 +830,19 @@ public class Test extends AbstractTestTask implements JavaForkOptions, PatternFi
     }
 
     @Internal
-    public TestFramework getTestFramework() {
-        if (testFramework == null) {
-            TestFrameworkAutoDetection.configure(this);
-        }
+    public Property<TestFramework> getTestingFramework() {
         return testFramework;
+    }
+
+    @Internal
+    public TestFramework getTestFramework() {
+        return testFramework.get();
     }
 
     @Deprecated
     public TestFramework testFramework(@Nullable Closure testFrameworkConfigure) {
         DeprecationLogger.nagUserOfDiscontinuedMethod("testFramework", "Please call useJUnit(), useJUnitPlatform(), or useTestNG() instead.");
-        if (testFramework == null) {
-            useJUnit(testFrameworkConfigure);
-        }
-
-        return testFramework;
+        return ConfigureUtil.configure(testFrameworkConfigure, getTestFramework());
     }
 
     /**
@@ -870,24 +876,6 @@ public class Test extends AbstractTestTask implements JavaForkOptions, PatternFi
         return options;
     }
 
-    TestFramework useTestFramework(TestFramework testFramework) {
-        return useTestFramework(testFramework, null);
-    }
-
-    private <T extends TestFrameworkOptions> TestFramework useTestFramework(TestFramework testFramework, @Nullable Action<? super T> testFrameworkConfigure) {
-        if (testFramework == null) {
-            throw new IllegalArgumentException("testFramework is null!");
-        }
-
-        this.testFramework = testFramework;
-
-        if (testFrameworkConfigure != null) {
-            testFrameworkConfigure.execute(Cast.<T>uncheckedNonnullCast(this.testFramework.getOptions()));
-        }
-
-        return this.testFramework;
-    }
-
     /**
      * Specifies that JUnit should be used to execute the tests. <p> To configure JUnit specific options, see {@link #useJUnit(groovy.lang.Closure)}.
      */
@@ -913,7 +901,9 @@ public class Test extends AbstractTestTask implements JavaForkOptions, PatternFi
      * @since 3.5
      */
     public void useJUnit(Action<? super JUnitOptions> testFrameworkConfigure) {
-        useTestFramework(new JUnitTestFramework(this, (DefaultTestFilter) getFilter()), testFrameworkConfigure);
+        JUnitTestFramework newFramework = getTestFrameworkFactory().createJUnit(this);
+        testFrameworkConfigure.execute(newFramework.getOptions());
+        testFramework.set(newFramework);
     }
 
     /**
@@ -933,7 +923,9 @@ public class Test extends AbstractTestTask implements JavaForkOptions, PatternFi
      * @since 4.6
      */
     public void useJUnitPlatform(Action<? super JUnitPlatformOptions> testFrameworkConfigure) {
-        useTestFramework(new JUnitPlatformTestFramework((DefaultTestFilter) getFilter()), testFrameworkConfigure);
+        JUnitPlatformTestFramework newFramework = getTestFrameworkFactory().createJUnitPlatform(this);
+        testFrameworkConfigure.execute(newFramework.getOptions());
+        testFramework.set(newFramework);
     }
 
     /**
@@ -961,7 +953,9 @@ public class Test extends AbstractTestTask implements JavaForkOptions, PatternFi
      * @since 3.5
      */
     public void useTestNG(Action<? super TestNGOptions> testFrameworkConfigure) {
-        useTestFramework(new TestNGTestFramework(this, (DefaultTestFilter) getFilter(), getInstantiator(), getClassLoaderCache()), testFrameworkConfigure);
+        TestNGTestFramework newFramework = getTestFrameworkFactory().createTestNG(this);
+        testFrameworkConfigure.execute(newFramework.getOptions());
+        testFramework.set(newFramework);
     }
 
     /**

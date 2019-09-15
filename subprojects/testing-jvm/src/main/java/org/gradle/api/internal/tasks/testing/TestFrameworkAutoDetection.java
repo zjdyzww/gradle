@@ -16,43 +16,55 @@
 
 package org.gradle.api.internal.tasks.testing;
 
-import org.gradle.api.file.FileCollection;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.artifacts.DependencySet;
 import org.gradle.api.tasks.testing.Test;
-
-import java.io.File;
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class TestFrameworkAutoDetection {
 
-    private static final Pattern VERSIONED_JAR_PATTERN = Pattern.compile("([a-z-]+)-\\d.*\\.jar");
+    private final TestFrameworkFactory testFrameworkFactory;
 
-    public static void configure(Test task) {
-        Set<String> artifacts = getArtifactNames(task.getClasspath());
-        if (artifacts.contains("junit-platform-engine")
-                && (!artifacts.contains("junit") || artifacts.contains("junit-vintage-engine"))) {
-            task.useJUnitPlatform();
-        } else if (artifacts.contains("testng") && !artifacts.contains("junit")) {
-            task.useTestNG();
-        } else {
-            task.useJUnit();
-        }
+    public TestFrameworkAutoDetection(TestFrameworkFactory testFrameworkFactory) {
+        this.testFrameworkFactory = testFrameworkFactory;
     }
 
-    private static Set<String> getArtifactNames(FileCollection classpath) {
-        Set<String> result = new LinkedHashSet<String>();
-        for (File file : classpath.getFiles()) {
-            if (file.isFile()) {
-                Matcher matcher = VERSIONED_JAR_PATTERN.matcher(file.getName());
-                if (matcher.matches()) {
-                    String artifactName = matcher.group(1);
-                    result.add(artifactName);
-                }
+    public TestFramework assumeDefaultFor(Test test) {
+        return testFrameworkFactory.createJUnit(test);
+    }
+
+    public TestFramework detect(Test test, Configuration runtime) {
+        DependencySet runtimeDependencies = runtime.getDependencies();
+
+        boolean foundJUnitPlatformEngine = false; // org.junit.jupiter:junit-jupiter
+        boolean foundJUnit = false; // junit:junit
+        boolean foundTestNG = false; // org.testng:testng
+
+        for (Dependency dependency : runtimeDependencies) {
+            if (matchesCoordinates("org.junit.jupiter", "junit-jupiter", dependency)) {
+                foundJUnitPlatformEngine = true;
+            }
+            if (matchesCoordinates("junit", "junit", dependency)) {
+                foundJUnit = true;
+            }
+            if (matchesCoordinates("org.testng", "testng", dependency)) {
+                foundTestNG = true;
             }
         }
-        return result;
+
+        if (foundJUnitPlatformEngine) {
+            return testFrameworkFactory.createJUnitPlatform(test);
+        } else if (foundJUnit) {
+            return testFrameworkFactory.createJUnit(test);
+        } else if (foundTestNG) {
+            return testFrameworkFactory.createTestNG(test);
+        }
+
+        // Assuming whatever the default would be
+        return assumeDefaultFor(test);
     }
 
+    private boolean matchesCoordinates(String group, String name, Dependency dependency) {
+        return (dependency.getGroup() != null && dependency.getGroup().equals(group)) && dependency.getName().equals(name);
+    }
 }
