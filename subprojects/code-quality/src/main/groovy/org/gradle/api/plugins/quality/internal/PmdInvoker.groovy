@@ -17,6 +17,7 @@
 package org.gradle.api.plugins.quality.internal
 
 import org.gradle.api.GradleException
+import org.gradle.api.VerificationCheckFailedException
 import org.gradle.api.file.FileCollection
 import org.gradle.api.plugins.quality.Pmd
 import org.gradle.api.specs.Spec
@@ -143,7 +144,7 @@ abstract class PmdInvoker {
                         if (ignoreFailures) {
                             logger.warn(message)
                         } else {
-                            throw new GradleException(message)
+                            throw new VerificationCheckFailedException(message)
                         }
                     }
                 }

@@ -17,7 +17,7 @@
 package org.gradle.testing.jacoco.tasks;
 
 import org.gradle.api.Action;
-import org.gradle.api.GradleException;
+import org.gradle.api.VerificationCheckFailedException;
 import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.TaskAction;
@@ -83,7 +83,7 @@ public class JacocoCoverageVerification extends JacocoReportBase {
         );
 
         if (!checkResult.isSuccess()) {
-            throw new GradleException(checkResult.getFailureMessage());
+            throw new VerificationCheckFailedException(checkResult.getFailureMessage());
         }
     }
 }

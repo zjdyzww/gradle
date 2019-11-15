@@ -16,7 +16,8 @@
 
 package org.gradle.api.plugins.quality.internal
 
-import org.gradle.api.GradleException
+
+import org.gradle.api.VerificationCheckFailedException
 import org.gradle.api.file.FileCollection
 import org.gradle.api.plugins.quality.Checkstyle
 import org.gradle.api.plugins.quality.CheckstyleReports
@@ -100,7 +101,7 @@ abstract class CheckstyleInvoker {
             }
 
             if (ant.project.properties[FAILURE_PROPERTY_NAME] && !ignoreFailures) {
-                throw new GradleException(getMessage(reports, parseCheckstyleXml(reports)))
+                throw new VerificationCheckFailedException(getMessage(reports, parseCheckstyleXml(reports)))
             } else {
                 def reportXml = parseCheckstyleXml(reports)
                 if(violationsExist(reportXml)) {

@@ -21,7 +21,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import groovy.lang.Closure;
 import org.gradle.api.Action;
-import org.gradle.api.GradleException;
+import org.gradle.api.VerificationCheckFailedException;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.internal.ConventionTask;
 import org.gradle.api.internal.tasks.testing.DefaultTestTaskReports;
@@ -611,7 +611,7 @@ public abstract class AbstractTestTask extends ConventionTask implements Verific
         if (getIgnoreFailures()) {
             getLogger().warn(message);
         } else {
-            throw new GradleException(message);
+            throw new VerificationCheckFailedException(message);
         }
     }
 
