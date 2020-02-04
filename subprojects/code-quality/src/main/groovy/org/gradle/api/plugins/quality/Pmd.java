@@ -100,9 +100,7 @@ public class Pmd extends SourceTask implements VerificationTask, Reporting<PmdRe
 
     @TaskAction
     public void run() {
-        WorkQueue queue = getWorkExecutor().processIsolation(spec -> {
-            spec.getClasspath().from(getPmdClasspath());
-        });
+        WorkQueue queue = getWorkExecutor().processIsolation();
         queue.submit(PmdAction.class, parameters -> {
             parameters.getPmdClasspath().from(getPmdClasspath());
             parameters.getClasspath().from(getClasspath());

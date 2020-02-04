@@ -40,126 +40,137 @@ abstract class PmdAction implements WorkAction<PmdParameters> {
         def ruleSets = parameters.ruleSets.get()
         def classpath = parameters.classpath.filter(new FileExistFilter())
         def incrementalAnalysis = parameters.incrementalAnalysis.get()
-        final org.gradle.api.AntBuilder ant = new BasicAntBuilder()
+        def ant = new BasicAntBuilder()
 
         // PMD uses java.class.path to determine it's implementation classpath for incremental analysis
         // Since we run PMD inside a Gradle daemon, this can pull in all of Gradle's runtime.
         // To hide this from PMD, we override the java.class.path to just the PMD classpath from Gradle's POV.
 
-        SystemProperties.instance.withSystemProperty("java.class.path", pmdClasspath.files.join(File.pathSeparator), new Factory<Void>() {
-            @Override
-            Void create() {
-                VersionNumber version = determinePmdVersion(Thread.currentThread().getContextClassLoader())
+        try {
+            SystemProperties.instance.withSystemProperty("java.class.path", pmdClasspath.files.join(File.pathSeparator), new Factory<Void>() {
+                @Override
+                Void create() {
+                    VersionNumber version = determinePmdVersion(pmdClasspath)
 
-                def antPmdArgs = [
-                        failOnRuleViolation: false,
-                        failuresPropertyName: "pmdFailureCount",
-                        minimumPriority: parameters.rulePriority.get(),
-                ]
+                    def antPmdArgs = [
+                            failOnRuleViolation: false,
+                            failuresPropertyName: "pmdFailureCount",
+                            minimumPriority: parameters.rulePriority.get(),
+                    ]
 
-                String htmlFormat = "html"
-                if (version < VersionNumber.parse("5.0.0")) {
-                    // <5.x
-                    // NOTE: PMD 5.0.2 apparently introduces an element called "language" that serves the same purpose
-                    // http://sourceforge.net/p/pmd/bugs/1004/
-                    // http://java-pmd.30631.n5.nabble.com/pmd-pmd-db05bc-pmd-AntTask-support-for-language-td5710041.html
-                    antPmdArgs["targetjdk"] = parameters.targetJdk.get().name
+                    String htmlFormat = "html"
+                    if (version < VersionNumber.parse("5.0.0")) {
+                        // <5.x
+                        // NOTE: PMD 5.0.2 apparently introduces an element called "language" that serves the same purpose
+                        // http://sourceforge.net/p/pmd/bugs/1004/
+                        // http://java-pmd.30631.n5.nabble.com/pmd-pmd-db05bc-pmd-AntTask-support-for-language-td5710041.html
+                        antPmdArgs["targetjdk"] = parameters.targetJdk.get().name
 
-                    htmlFormat = "betterhtml"
+                        htmlFormat = "betterhtml"
 
-                    // fallback to basic on pre 5.0 for backwards compatible
-                    if (ruleSets == ["java-basic"] || ruleSets == ["category/java/errorprone.xml"]) {
-                        ruleSets = ['basic']
-                    }
-                    if (incrementalAnalysis) {
-                        assertUnsupportedIncrementalAnalysis()
-                    }
-                } else if (version < VersionNumber.parse("6.0.0")) {
-                    // 5.x
-                    if (ruleSets == ["category/java/errorprone.xml"]) {
-                        ruleSets = ['java-basic']
-                    }
-                    if (incrementalAnalysis) {
-                        assertUnsupportedIncrementalAnalysis()
-                    }
-                } else {
-                    // 6.+
-                    if (incrementalAnalysis) {
-                        antPmdArgs["cacheLocation"] = parameters.incrementalCacheFile.get().asFile
+                        // fallback to basic on pre 5.0 for backwards compatible
+                        if (ruleSets == ["java-basic"] || ruleSets == ["category/java/errorprone.xml"]) {
+                            ruleSets = ['basic']
+                        }
+                        if (incrementalAnalysis) {
+                            assertUnsupportedIncrementalAnalysis()
+                        }
+                    } else if (version < VersionNumber.parse("6.0.0")) {
+                        // 5.x
+                        if (ruleSets == ["category/java/errorprone.xml"]) {
+                            ruleSets = ['java-basic']
+                        }
+                        if (incrementalAnalysis) {
+                            assertUnsupportedIncrementalAnalysis()
+                        }
                     } else {
-                        if (version >= VersionNumber.parse("6.2.0")) {
-                            antPmdArgs['noCache'] = true
+                        // 6.+
+                        if (incrementalAnalysis) {
+                            antPmdArgs["cacheLocation"] = parameters.incrementalCacheFile.get().asFile
+                        } else {
+                            if (version >= VersionNumber.parse("6.2.0")) {
+                                antPmdArgs['noCache'] = true
+                            }
                         }
                     }
-                }
 
-                ant.taskdef(name: 'pmd', classname: 'net.sourceforge.pmd.ant.PMDTask', classpath: pmdClasspath.asPath)
-                ant.pmd(antPmdArgs) {
-                    parameters.source.addToAntBuilder(ant, 'fileset', FileCollection.AntType.FileSet)
-                    ruleSets.each {
-                        ruleset(it)
-                    }
-                    parameters.ruleSetFiles.each {
-                        ruleset(it)
-                    }
-                    if (parameters.getRuleSetConfig().isPresent()) {
-                        ruleset(parameters.getRuleSetConfig().get().asFile)
-                    }
-
-                    if (classpath != null) {
-                        classpath.addToAntBuilder(ant, 'auxclasspath', FileCollection.AntType.ResourceCollection)
-                    }
-
-                    if (parameters.getHtmlReportFile().isPresent()) {
-                        File html = parameters.getHtmlReportFile().get().asFile
-                        assert html.parentFile.exists()
-                        formatter(type: htmlFormat, toFile: html)
-                    }
-                    if (parameters.getXmlReportFile().isPresent()) {
-                        formatter(type: 'xml', toFile: parameters.getXmlReportFile().get().asFile)
-                    }
-
-                    if (parameters.consoleOutput.get()) {
-                        def consoleOutputType = 'text'
-                        if (parameters.stdOutIsAttachedToTerminal.get()) {
-                            consoleOutputType = 'textcolor'
+                    ant.taskdef(name: 'pmd', classname: 'net.sourceforge.pmd.ant.PMDTask', classpath: pmdClasspath.asPath)
+                    ant.pmd(antPmdArgs) {
+                        parameters.source.addToAntBuilder(ant, 'fileset', FileCollection.AntType.FileSet)
+                        ruleSets.each {
+                            ruleset(it)
                         }
-                        ant.saveStreams = false
-                        formatter(type: consoleOutputType, toConsole: true)
-                    }
-                }
-                def failureCount = ant.project.properties["pmdFailureCount"]
-                if (failureCount) {
-                    def message = "$failureCount PMD rule violations were found."
-                    if (parameters.getPreferredReportFile().isPresent()) {
-                        def reportUrl = new ConsoleRenderer().asClickableFileUrl(parameters.getPreferredReportFile().get().asFile)
-                        message += " See the report at: $reportUrl"
-                    }
-                    if (parameters.ignoreFailures.get()) {
-                        LOGGER.warn(message)
-                    } else {
-                        throw new GradleException(message)
-                    }
-                }
+                        parameters.ruleSetFiles.each {
+                            ruleset(it)
+                        }
+                        if (parameters.getRuleSetConfig().isPresent()) {
+                            ruleset(parameters.getRuleSetConfig().get().asFile)
+                        }
 
-                return null
-            }
+                        if (classpath != null) {
+                            classpath.addToAntBuilder(ant, 'auxclasspath', FileCollection.AntType.ResourceCollection)
+                        }
 
-            private VersionNumber determinePmdVersion(ClassLoader antLoader) {
-                Class pmdVersion
-                try {
-                    pmdVersion = antLoader.loadClass("net.sourceforge.pmd.PMDVersion")
-                } catch (ClassNotFoundException e) {
-                    pmdVersion = antLoader.loadClass("net.sourceforge.pmd.PMD")
+                        if (parameters.getHtmlReportFile().isPresent()) {
+                            File html = parameters.getHtmlReportFile().get().asFile
+                            assert html.parentFile.exists()
+                            formatter(type: htmlFormat, toFile: html)
+                        }
+                        if (parameters.getXmlReportFile().isPresent()) {
+                            formatter(type: 'xml', toFile: parameters.getXmlReportFile().get().asFile)
+                        }
+
+                        if (parameters.consoleOutput.get()) {
+                            def consoleOutputType = 'text'
+                            if (parameters.stdOutIsAttachedToTerminal.get()) {
+                                consoleOutputType = 'textcolor'
+                            }
+                            ant.saveStreams = false
+                            formatter(type: consoleOutputType, toConsole: true)
+                        }
+                    }
+                    def failureCount = ant.project.properties["pmdFailureCount"]
+                    if (failureCount) {
+                        def message = "$failureCount PMD rule violations were found."
+                        if (parameters.getPreferredReportFile().isPresent()) {
+                            def reportUrl = new ConsoleRenderer().asClickableFileUrl(parameters.getPreferredReportFile().get().asFile)
+                            message += " See the report at: $reportUrl"
+                        }
+                        if (parameters.ignoreFailures.get()) {
+                            LOGGER.warn(message)
+                        } else {
+                            throw new GradleException(message)
+                        }
+                    }
+
+                    return null
                 }
-                Field versionField = pmdVersion.getDeclaredField("VERSION")
-                return VersionNumber.parse(Cast.castNullable(String.class, versionField.get(null)))
+            })
+        } finally {
+            if (ant) {
+                ant.close()
             }
+        }
+    }
 
-            private void assertUnsupportedIncrementalAnalysis() {
-                throw new GradleException("Incremental analysis only supports PMD 6.0.0 and newer")
+    private static VersionNumber determinePmdVersion(FileCollection classpath) {
+        ClassLoader classloader = new URLClassLoader(classpath.collect { it.toURI().toURL() } as URL[])
+        try {
+            Class pmdVersion
+            try {
+                pmdVersion = classloader.loadClass("net.sourceforge.pmd.PMDVersion")
+            } catch (ClassNotFoundException e) {
+                pmdVersion = classloader.loadClass("net.sourceforge.pmd.PMD")
             }
-        })
+            Field versionField = pmdVersion.getDeclaredField("VERSION")
+            return VersionNumber.parse(Cast.castNullable(String.class, versionField.get(null)))
+        } finally {
+            classloader.close()
+        }
+    }
+
+    private static void assertUnsupportedIncrementalAnalysis() {
+        throw new GradleException("Incremental analysis only supports PMD 6.0.0 and newer")
     }
 
     private static class FileExistFilter implements Spec<File> {
