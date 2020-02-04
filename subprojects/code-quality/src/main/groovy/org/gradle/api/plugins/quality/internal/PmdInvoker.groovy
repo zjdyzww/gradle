@@ -19,7 +19,6 @@ package org.gradle.api.plugins.quality.internal
 import org.gradle.api.GradleException
 import org.gradle.api.file.FileCollection
 import org.gradle.api.logging.Logger
-import org.gradle.api.plugins.quality.Pmd
 import org.gradle.api.plugins.quality.PmdReports
 import org.gradle.api.specs.Spec
 import org.gradle.internal.Cast
@@ -33,22 +32,15 @@ import java.lang.reflect.Field
 abstract class PmdInvoker {
     static void invoke(PmdParameters parameters, PmdReports reports, AntBuilder antBuilder, Logger logger) {
         def pmdClasspath = parameters.pmdClasspath.filter(new FileExistFilter())
-        def targetJdk = parameters.targetJdk.get()
         def ruleSets = parameters.ruleSets.get()
-        def rulePriority = parameters.rulePriority.get()
-        def source = parameters.source
-        def ruleSetFiles = parameters.ruleSetFiles
         def ruleSetConfig = parameters.ruleSetConfig.get().asFile
         def classpath = parameters.classpath.filter(new FileExistFilter())
-        def consoleOutput = parameters.consoleOutput.get()
-        def stdOutIsAttachedToTerminal = parameters.stdOutIsAttachedToTerminal.get() // consoleOutput ? pmdTask.stdOutIsAttachedToTerminal() : false
-        def ignoreFailures = parameters.ignoreFailures.get()
         def incrementalAnalysis = parameters.incrementalAnalysis.get()
-        def incrementalCacheFile = parameters.incrementalCacheFile.get().asFile
 
         // PMD uses java.class.path to determine it's implementation classpath for incremental analysis
         // Since we run PMD inside the Gradle daemon, this pulls in all of Gradle's runtime.
         // To hide this from PMD, we override the java.class.path to just the PMD classpath from Gradle's POV.
+
         SystemProperties.instance.withSystemProperty("java.class.path", pmdClasspath.files.join(File.pathSeparator), new Factory<Void>() {
             @Override
             Void create() {
@@ -58,7 +50,7 @@ abstract class PmdInvoker {
                     def antPmdArgs = [
                             failOnRuleViolation: false,
                             failuresPropertyName: "pmdFailureCount",
-                            minimumPriority: rulePriority,
+                            minimumPriority: parameters.rulePriority.get(),
                     ]
 
                     String htmlFormat = "html"
@@ -67,7 +59,7 @@ abstract class PmdInvoker {
                         // NOTE: PMD 5.0.2 apparently introduces an element called "language" that serves the same purpose
                         // http://sourceforge.net/p/pmd/bugs/1004/
                         // http://java-pmd.30631.n5.nabble.com/pmd-pmd-db05bc-pmd-AntTask-support-for-language-td5710041.html
-                        antPmdArgs["targetjdk"] = targetJdk.name
+                        antPmdArgs["targetjdk"] = parameters.targetJdk.get().name
 
                         htmlFormat = "betterhtml"
 
@@ -89,7 +81,7 @@ abstract class PmdInvoker {
                     } else {
                         // 6.+
                         if (incrementalAnalysis) {
-                            antPmdArgs["cacheLocation"] = incrementalCacheFile
+                            antPmdArgs["cacheLocation"] = parameters.incrementalCacheFile.get().asFile
                         } else {
                             if (version >= VersionNumber.parse("6.2.0")) {
                                 antPmdArgs['noCache'] = true
@@ -99,11 +91,11 @@ abstract class PmdInvoker {
 
                     ant.taskdef(name: 'pmd', classname: 'net.sourceforge.pmd.ant.PMDTask')
                     ant.pmd(antPmdArgs) {
-                        source.addToAntBuilder(ant, 'fileset', FileCollection.AntType.FileSet)
+                        parameters.source.addToAntBuilder(ant, 'fileset', FileCollection.AntType.FileSet)
                         ruleSets.each {
                             ruleset(it)
                         }
-                        ruleSetFiles.each {
+                        parameters.ruleSetFiles.each {
                             ruleset(it)
                         }
                         if (ruleSetConfig != null) {
@@ -122,9 +114,9 @@ abstract class PmdInvoker {
                             formatter(type: 'xml', toFile: reports.xml.destination)
                         }
 
-                        if (consoleOutput) {
+                        if (parameters.consoleOutput.get()) {
                             def consoleOutputType = 'text'
-                            if (stdOutIsAttachedToTerminal) {
+                            if (parameters.stdOutIsAttachedToTerminal.get()) {
                                 consoleOutputType = 'textcolor'
                             }
                             a.builder.saveStreams = false
@@ -139,7 +131,7 @@ abstract class PmdInvoker {
                             def reportUrl = new ConsoleRenderer().asClickableFileUrl(report.destination)
                             message += " See the report at: $reportUrl"
                         }
-                        if (ignoreFailures) {
+                        if (parameters.ignoreFailures.get()) {
                             logger.warn(message)
                         } else {
                             throw new GradleException(message)
