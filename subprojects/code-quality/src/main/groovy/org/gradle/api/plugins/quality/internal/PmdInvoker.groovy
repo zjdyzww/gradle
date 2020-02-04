@@ -18,7 +18,6 @@ package org.gradle.api.plugins.quality.internal
 
 import org.gradle.api.GradleException
 import org.gradle.api.file.FileCollection
-import org.gradle.api.logging.Logger
 import org.gradle.api.plugins.quality.PmdReports
 import org.gradle.api.specs.Spec
 import org.gradle.internal.Cast
@@ -26,11 +25,15 @@ import org.gradle.internal.Factory
 import org.gradle.internal.SystemProperties
 import org.gradle.internal.logging.ConsoleRenderer
 import org.gradle.util.VersionNumber
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 import java.lang.reflect.Field
 
 abstract class PmdInvoker {
-    static void invoke(PmdParameters parameters, PmdReports reports, AntBuilder antBuilder, Logger logger) {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PmdInvoker.class)
+
+    static void invoke(PmdParameters parameters, PmdReports reports, AntBuilder antBuilder) {
         def pmdClasspath = parameters.pmdClasspath.filter(new FileExistFilter())
         def ruleSets = parameters.ruleSets.get()
         def ruleSetConfig = parameters.ruleSetConfig.get().asFile
@@ -132,7 +135,7 @@ abstract class PmdInvoker {
                             message += " See the report at: $reportUrl"
                         }
                         if (parameters.ignoreFailures.get()) {
-                            logger.warn(message)
+                            LOGGER.warn(message)
                         } else {
                             throw new GradleException(message)
                         }
