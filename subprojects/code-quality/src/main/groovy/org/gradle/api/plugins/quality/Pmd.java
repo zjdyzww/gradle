@@ -92,7 +92,8 @@ public class Pmd extends SourceTask implements VerificationTask, Reporting<PmdRe
 
     @TaskAction
     public void run() {
-        PmdParameters parameters = getObjectFactory().newInstance(PmdParameters.class);
+        ObjectFactory objects = getObjectFactory();
+        PmdParameters parameters = objects.newInstance(PmdParameters.class);
         parameters.getPmdClasspath().from(getPmdClasspath());
         parameters.getClasspath().from(getClasspath());
         parameters.getSource().from(getSource());
@@ -111,7 +112,8 @@ public class Pmd extends SourceTask implements VerificationTask, Reporting<PmdRe
 
         parameters.getIncrementalAnalysis().set(getIncrementalAnalysis());
         parameters.getIncrementalCacheFile().set(getIncrementalCacheFile());
-        PmdInvoker.invoke(parameters, this.getReports(), this.getAnt(), this.getLogger());
+
+        objects.newInstance(PmdInvoker.class, parameters, this.getReports(), this.getAnt()).execute();
     }
 
     public boolean stdOutIsAttachedToTerminal() {

@@ -25,15 +25,31 @@ import org.gradle.internal.Factory
 import org.gradle.internal.SystemProperties
 import org.gradle.internal.logging.ConsoleRenderer
 import org.gradle.util.VersionNumber
+import org.gradle.workers.WorkAction
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 import java.lang.reflect.Field
 
-abstract class PmdInvoker {
+abstract class PmdInvoker implements WorkAction<PmdParameters> {
     private static final Logger LOGGER = LoggerFactory.getLogger(PmdInvoker.class)
+    private final PmdParameters pmdParameters
+    private final PmdReports reports
+    private final org.gradle.api.AntBuilder antBuilder
 
-    static void invoke(PmdParameters parameters, PmdReports reports, AntBuilder antBuilder) {
+    PmdInvoker(PmdParameters parameters, PmdReports reports, org.gradle.api.AntBuilder antBuilder) {
+        this.parameters = parameters;
+        this.reports = reports;
+        this.antBuilder = antBuilder;
+    }
+
+    @Override
+    PmdParameters getParameters() {
+        return pmdParameters
+    }
+
+    @Override
+    void execute() {
         def pmdClasspath = parameters.pmdClasspath.filter(new FileExistFilter())
         def ruleSets = parameters.ruleSets.get()
         def ruleSetConfig = parameters.ruleSetConfig.get().asFile

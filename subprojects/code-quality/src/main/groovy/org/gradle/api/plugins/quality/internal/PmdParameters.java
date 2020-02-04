@@ -21,8 +21,9 @@ import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.plugins.quality.TargetJdk;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
+import org.gradle.workers.WorkParameters;
 
-public interface PmdParameters {
+public interface PmdParameters extends WorkParameters {
     ConfigurableFileCollection getPmdClasspath();
     ConfigurableFileCollection getClasspath();
     ConfigurableFileCollection getSource();
