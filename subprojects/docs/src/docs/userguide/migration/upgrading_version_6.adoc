@@ -36,7 +36,11 @@ Some plugins will break with this new version of Gradle, for example because the
 [[changes_6.3]]
 == Upgrading from 6.2
 
-There were no breaking changes between Gradle 6.2 and 6.3.
+=== Upgrades for code quality tools
+
+* <<codenarc_plugin.adoc#,CodeNarc plugin>> now uses link:https://github.com/CodeNarc/CodeNarc/blob/v1.5/CHANGELOG.md#version-15----nov-2019[CodeNarc 1.5] by default.
+* <<pmd_plugin.adoc#,PMD plugin>> now uses link:https://github.com/pmd/pmd/releases/tag/pmd_releases%2F6.21.0[PMD 6.21.0] by default.
+* <<checkstyle_plugin.adoc#,Checkstyle plugin>> now uses link:https://checkstyle.org/releasenotes.html#Release_8.29[Checkstyle 8.29] by default.
 
 === Deprecations
 
