@@ -24,8 +24,7 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.internal.project.IsolatedAntBuilder;
 import org.gradle.api.model.ObjectFactory;
-import org.gradle.api.plugins.quality.internal.PmdInvoker;
-import org.gradle.api.plugins.quality.internal.PmdParameters;
+import org.gradle.api.plugins.quality.internal.PmdAction;
 import org.gradle.api.plugins.quality.internal.PmdReportsImpl;
 import org.gradle.api.provider.Property;
 import org.gradle.api.reporting.Reporting;
@@ -49,6 +48,8 @@ import org.gradle.internal.nativeintegration.console.ConsoleDetector;
 import org.gradle.internal.nativeintegration.console.ConsoleMetaData;
 import org.gradle.internal.nativeintegration.services.NativeServices;
 import org.gradle.util.ClosureBackedAction;
+import org.gradle.workers.WorkQueue;
+import org.gradle.workers.WorkerExecutor;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -92,41 +93,49 @@ public class Pmd extends SourceTask implements VerificationTask, Reporting<PmdRe
         throw new UnsupportedOperationException();
     }
 
+    @Inject
+    public WorkerExecutor getWorkExecutor() {
+        throw new UnsupportedOperationException();
+    }
+
     @TaskAction
     public void run() {
-        ObjectFactory objects = getObjectFactory();
-        PmdParameters parameters = objects.newInstance(PmdParameters.class);
-        parameters.getPmdClasspath().from(getPmdClasspath());
-        parameters.getClasspath().from(getClasspath());
-        parameters.getSource().from(getSource());
+        WorkQueue queue = getWorkExecutor().processIsolation(spec -> {
+            spec.getClasspath().from(getPmdClasspath());
+        });
+        queue.submit(PmdAction.class, parameters -> {
+            parameters.getPmdClasspath().from(getPmdClasspath());
+            parameters.getClasspath().from(getClasspath());
+            parameters.getSource().from(getSource());
 
-        parameters.getTargetJdk().set(getTargetJdk());
+            parameters.getTargetJdk().set(getTargetJdk());
 
-        if (reports.getHtml().isEnabled()) {
-            parameters.getHtmlReportFile().set(reports.getHtml().getOutputLocation());
-        }
-        if (reports.getXml().isEnabled()) {
-            parameters.getXmlReportFile().set(reports.getXml().getOutputLocation());
-        }
-        SingleFileReport firstEnabled = ((DefaultReportContainer<SingleFileReport>)reports).getFirstEnabled();
-        if (firstEnabled != null) {
-            parameters.getPreferredReportFile().set(firstEnabled.getOutputLocation());
-        }
+            if (reports.getHtml().isEnabled()) {
+                parameters.getHtmlReportFile().set(reports.getHtml().getOutputLocation());
+            }
+            if (reports.getXml().isEnabled()) {
+                parameters.getXmlReportFile().set(reports.getXml().getOutputLocation());
+            }
+            SingleFileReport firstEnabled = ((DefaultReportContainer<SingleFileReport>)reports).getFirstEnabled();
+            if (firstEnabled != null) {
+                parameters.getPreferredReportFile().set(firstEnabled.getOutputLocation());
+            }
 
-        parameters.getRuleSets().set(getRuleSets());
-        parameters.getRuleSetFiles().from(getRuleSetFiles());
-        parameters.getRuleSetConfig().set(getRuleSetConfig().asFile());
-        parameters.getRulePriority().set(getRulePriority());
+            parameters.getRuleSets().set(getRuleSets());
+            parameters.getRuleSetFiles().from(getRuleSetFiles());
+            if (getRuleSetConfig() != null) {
+                parameters.getRuleSetConfig().set(getRuleSetConfig().asFile());
+            }
+            parameters.getRulePriority().set(getRulePriority());
 
-        parameters.getConsoleOutput().set(isConsoleOutput());
-        parameters.getStdOutIsAttachedToTerminal().set(isConsoleOutput() && stdOutIsAttachedToTerminal());
+            parameters.getConsoleOutput().set(isConsoleOutput());
+            parameters.getStdOutIsAttachedToTerminal().set(isConsoleOutput() && stdOutIsAttachedToTerminal());
 
-        parameters.getIgnoreFailures().set(getIgnoreFailures());
+            parameters.getIgnoreFailures().set(getIgnoreFailures());
 
-        parameters.getIncrementalAnalysis().set(getIncrementalAnalysis());
-        parameters.getIncrementalCacheFile().set(getIncrementalCacheFile());
-
-        objects.newInstance(PmdInvoker.class, parameters).execute();
+            parameters.getIncrementalAnalysis().set(getIncrementalAnalysis());
+            parameters.getIncrementalCacheFile().set(getIncrementalCacheFile());
+        });
     }
 
     public boolean stdOutIsAttachedToTerminal() {
