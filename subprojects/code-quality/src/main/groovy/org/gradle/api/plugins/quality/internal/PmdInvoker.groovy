@@ -19,7 +19,6 @@ package org.gradle.api.plugins.quality.internal
 import org.gradle.api.GradleException
 import org.gradle.api.file.FileCollection
 import org.gradle.api.internal.project.ant.BasicAntBuilder
-import org.gradle.api.plugins.quality.PmdReports
 import org.gradle.api.specs.Spec
 import org.gradle.internal.Cast
 import org.gradle.internal.Factory
@@ -35,13 +34,10 @@ import java.lang.reflect.Field
 abstract class PmdInvoker implements WorkAction<PmdParameters> {
     private static final Logger LOGGER = LoggerFactory.getLogger(PmdInvoker.class)
     private final PmdParameters pmdParameters
-    private final PmdReports reports
-    private final org.gradle.api.AntBuilder antBuilder
+    private final org.gradle.api.AntBuilder antBuilder = new BasicAntBuilder();
 
-    PmdInvoker(PmdParameters parameters, PmdReports reports) {
-        this.parameters = parameters;
-        this.reports = reports;
-        this.antBuilder = new BasicAntBuilder();
+    PmdInvoker(PmdParameters parameters) {
+        this.pmdParameters = parameters;
     }
 
     @Override
@@ -126,12 +122,13 @@ abstract class PmdInvoker implements WorkAction<PmdParameters> {
                             classpath.addToAntBuilder(ant, 'auxclasspath', FileCollection.AntType.ResourceCollection)
                         }
 
-                        if (reports.html.enabled) {
-                            assert reports.html.destination.parentFile.exists()
-                            formatter(type: htmlFormat, toFile: reports.html.destination)
+                        if (parameters.getHtmlReportFile().isPresent()) {
+                            File html = parameters.getHtmlReportFile().get().asFile
+                            assert html.parentFile.exists()
+                            formatter(type: htmlFormat, toFile: html)
                         }
-                        if (reports.xml.enabled) {
-                            formatter(type: 'xml', toFile: reports.xml.destination)
+                        if (parameters.getXmlReportFile().isPresent()) {
+                            formatter(type: 'xml', toFile: parameters.getXmlReportFile().get().asFile)
                         }
 
                         if (parameters.consoleOutput.get()) {
@@ -146,9 +143,8 @@ abstract class PmdInvoker implements WorkAction<PmdParameters> {
                     def failureCount = ant.project.properties["pmdFailureCount"]
                     if (failureCount) {
                         def message = "$failureCount PMD rule violations were found."
-                        def report = reports.firstEnabled
-                        if (report) {
-                            def reportUrl = new ConsoleRenderer().asClickableFileUrl(report.destination)
+                        if (parameters.getPreferredReportFile().isPresent()) {
+                            def reportUrl = new ConsoleRenderer().asClickableFileUrl(parameters.getPreferredReportFile().get().asFile)
                             message += " See the report at: $reportUrl"
                         }
                         if (parameters.ignoreFailures.get()) {

@@ -28,6 +28,10 @@ public interface PmdParameters extends WorkParameters {
     ConfigurableFileCollection getClasspath();
     ConfigurableFileCollection getSource();
 
+    RegularFileProperty getXmlReportFile();
+    RegularFileProperty getHtmlReportFile();
+    RegularFileProperty getPreferredReportFile();
+
     Property<TargetJdk> getTargetJdk();
 
     ListProperty<String> getRuleSets();

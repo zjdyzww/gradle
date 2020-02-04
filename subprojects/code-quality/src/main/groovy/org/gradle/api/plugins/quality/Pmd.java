@@ -29,6 +29,8 @@ import org.gradle.api.plugins.quality.internal.PmdParameters;
 import org.gradle.api.plugins.quality.internal.PmdReportsImpl;
 import org.gradle.api.provider.Property;
 import org.gradle.api.reporting.Reporting;
+import org.gradle.api.reporting.SingleFileReport;
+import org.gradle.api.reporting.internal.DefaultReportContainer;
 import org.gradle.api.resources.TextResource;
 import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Classpath;
@@ -100,6 +102,17 @@ public class Pmd extends SourceTask implements VerificationTask, Reporting<PmdRe
 
         parameters.getTargetJdk().set(getTargetJdk());
 
+        if (reports.getHtml().isEnabled()) {
+            parameters.getHtmlReportFile().set(reports.getHtml().getOutputLocation());
+        }
+        if (reports.getXml().isEnabled()) {
+            parameters.getXmlReportFile().set(reports.getXml().getOutputLocation());
+        }
+        SingleFileReport firstEnabled = ((DefaultReportContainer<SingleFileReport>)reports).getFirstEnabled();
+        if (firstEnabled != null) {
+            parameters.getPreferredReportFile().set(firstEnabled.getOutputLocation());
+        }
+
         parameters.getRuleSets().set(getRuleSets());
         parameters.getRuleSetFiles().from(getRuleSetFiles());
         parameters.getRuleSetConfig().set(getRuleSetConfig().asFile());
@@ -113,7 +126,7 @@ public class Pmd extends SourceTask implements VerificationTask, Reporting<PmdRe
         parameters.getIncrementalAnalysis().set(getIncrementalAnalysis());
         parameters.getIncrementalCacheFile().set(getIncrementalCacheFile());
 
-        objects.newInstance(PmdInvoker.class, parameters, this.getReports()).execute();
+        objects.newInstance(PmdInvoker.class, parameters).execute();
     }
 
     public boolean stdOutIsAttachedToTerminal() {
