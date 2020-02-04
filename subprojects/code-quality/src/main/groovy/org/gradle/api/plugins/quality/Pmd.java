@@ -25,6 +25,7 @@ import org.gradle.api.file.FileTree;
 import org.gradle.api.internal.project.IsolatedAntBuilder;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.quality.internal.PmdInvoker;
+import org.gradle.api.plugins.quality.internal.PmdParameters;
 import org.gradle.api.plugins.quality.internal.PmdReportsImpl;
 import org.gradle.api.provider.Property;
 import org.gradle.api.reporting.Reporting;
@@ -91,7 +92,26 @@ public class Pmd extends SourceTask implements VerificationTask, Reporting<PmdRe
 
     @TaskAction
     public void run() {
-        PmdInvoker.invoke(this);
+        PmdParameters parameters = getObjectFactory().newInstance(PmdParameters.class);
+        parameters.getPmdClasspath().from(getPmdClasspath());
+        parameters.getClasspath().from(getClasspath());
+        parameters.getSource().from(getSource());
+
+        parameters.getTargetJdk().set(getTargetJdk());
+
+        parameters.getRuleSets().set(getRuleSets());
+        parameters.getRuleSetFiles().from(getRuleSetFiles());
+        parameters.getRuleSetConfig().set(getRuleSetConfig().asFile());
+        parameters.getRulePriority().set(getRulePriority());
+
+        parameters.getConsoleOutput().set(isConsoleOutput());
+        parameters.getStdOutIsAttachedToTerminal().set(isConsoleOutput() && stdOutIsAttachedToTerminal());
+
+        parameters.getIgnoreFailures().set(getIgnoreFailures());
+
+        parameters.getIncrementalAnalysis().set(getIncrementalAnalysis());
+        parameters.getIncrementalCacheFile().set(getIncrementalCacheFile());
+        PmdInvoker.invoke(parameters, this.getReports(), this.getAnt(), this.getLogger());
     }
 
     public boolean stdOutIsAttachedToTerminal() {

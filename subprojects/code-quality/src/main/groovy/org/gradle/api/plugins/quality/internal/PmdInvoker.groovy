@@ -18,7 +18,9 @@ package org.gradle.api.plugins.quality.internal
 
 import org.gradle.api.GradleException
 import org.gradle.api.file.FileCollection
+import org.gradle.api.logging.Logger
 import org.gradle.api.plugins.quality.Pmd
+import org.gradle.api.plugins.quality.PmdReports
 import org.gradle.api.specs.Spec
 import org.gradle.internal.Cast
 import org.gradle.internal.Factory
@@ -29,23 +31,20 @@ import org.gradle.util.VersionNumber
 import java.lang.reflect.Field
 
 abstract class PmdInvoker {
-    static void invoke(Pmd pmdTask) {
-        def pmdClasspath = pmdTask.pmdClasspath.filter(new FileExistFilter())
-        def targetJdk = pmdTask.targetJdk
-        def ruleSets = pmdTask.ruleSets
-        def rulePriority = pmdTask.rulePriority
-        def antBuilder = pmdTask.antBuilder
-        def source = pmdTask.source
-        def ruleSetFiles = pmdTask.ruleSetFiles
-        def ruleSetConfig = pmdTask.ruleSetConfig
-        def classpath = pmdTask.classpath?.filter(new FileExistFilter())
-        def reports = pmdTask.reports
-        def consoleOutput = pmdTask.consoleOutput
-        def stdOutIsAttachedToTerminal = consoleOutput ? pmdTask.stdOutIsAttachedToTerminal() : false
-        def ignoreFailures = pmdTask.ignoreFailures
-        def logger = pmdTask.logger
-        def incrementalAnalysis = pmdTask.incrementalAnalysis.get()
-        def incrementalCacheFile = pmdTask.incrementalCacheFile
+    static void invoke(PmdParameters parameters, PmdReports reports, AntBuilder antBuilder, Logger logger) {
+        def pmdClasspath = parameters.pmdClasspath.filter(new FileExistFilter())
+        def targetJdk = parameters.targetJdk.get()
+        def ruleSets = parameters.ruleSets.get()
+        def rulePriority = parameters.rulePriority.get()
+        def source = parameters.source
+        def ruleSetFiles = parameters.ruleSetFiles
+        def ruleSetConfig = parameters.ruleSetConfig.get().asFile
+        def classpath = parameters.classpath.filter(new FileExistFilter())
+        def consoleOutput = parameters.consoleOutput.get()
+        def stdOutIsAttachedToTerminal = parameters.stdOutIsAttachedToTerminal.get() // consoleOutput ? pmdTask.stdOutIsAttachedToTerminal() : false
+        def ignoreFailures = parameters.ignoreFailures.get()
+        def incrementalAnalysis = parameters.incrementalAnalysis.get()
+        def incrementalCacheFile = parameters.incrementalCacheFile.get().asFile
 
         // PMD uses java.class.path to determine it's implementation classpath for incremental analysis
         // Since we run PMD inside the Gradle daemon, this pulls in all of Gradle's runtime.
