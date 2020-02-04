@@ -18,6 +18,7 @@ package org.gradle.api.plugins.quality.internal
 
 import org.gradle.api.GradleException
 import org.gradle.api.file.FileCollection
+import org.gradle.api.internal.project.ant.BasicAntBuilder
 import org.gradle.api.plugins.quality.PmdReports
 import org.gradle.api.specs.Spec
 import org.gradle.internal.Cast
@@ -37,10 +38,10 @@ abstract class PmdInvoker implements WorkAction<PmdParameters> {
     private final PmdReports reports
     private final org.gradle.api.AntBuilder antBuilder
 
-    PmdInvoker(PmdParameters parameters, PmdReports reports, org.gradle.api.AntBuilder antBuilder) {
+    PmdInvoker(PmdParameters parameters, PmdReports reports) {
         this.parameters = parameters;
         this.reports = reports;
-        this.antBuilder = antBuilder;
+        this.antBuilder = new BasicAntBuilder();
     }
 
     @Override

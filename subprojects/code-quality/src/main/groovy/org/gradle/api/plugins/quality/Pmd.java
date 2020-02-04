@@ -113,7 +113,7 @@ public class Pmd extends SourceTask implements VerificationTask, Reporting<PmdRe
         parameters.getIncrementalAnalysis().set(getIncrementalAnalysis());
         parameters.getIncrementalCacheFile().set(getIncrementalCacheFile());
 
-        objects.newInstance(PmdInvoker.class, parameters, this.getReports(), this.getAnt()).execute();
+        objects.newInstance(PmdInvoker.class, parameters, this.getReports()).execute();
     }
 
     public boolean stdOutIsAttachedToTerminal() {
