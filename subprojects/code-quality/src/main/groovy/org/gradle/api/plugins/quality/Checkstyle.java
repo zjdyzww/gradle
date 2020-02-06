@@ -24,7 +24,7 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.internal.project.IsolatedAntBuilder;
 import org.gradle.api.model.ObjectFactory;
-import org.gradle.api.plugins.quality.internal.CheckstyleInvoker;
+import org.gradle.api.plugins.quality.internal.CheckstyleAction;
 import org.gradle.api.plugins.quality.internal.CheckstyleReportsImpl;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.reporting.Reporting;
@@ -44,6 +44,8 @@ import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.VerificationTask;
 import org.gradle.internal.deprecation.DeprecationLogger;
 import org.gradle.util.ClosureBackedAction;
+import org.gradle.workers.WorkQueue;
+import org.gradle.workers.WorkerExecutor;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -56,7 +58,6 @@ import java.util.Map;
  */
 @CacheableTask
 public class Checkstyle extends SourceTask implements VerificationTask, Reporting<CheckstyleReports> {
-
     private FileCollection checkstyleClasspath;
     private FileCollection classpath;
     private TextResource config;
@@ -95,6 +96,11 @@ public class Checkstyle extends SourceTask implements VerificationTask, Reportin
 
     @Inject
     public IsolatedAntBuilder getAntBuilder() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Inject
+    public WorkerExecutor getWorkExecutor() {
         throw new UnsupportedOperationException();
     }
 
@@ -148,7 +154,51 @@ public class Checkstyle extends SourceTask implements VerificationTask, Reportin
 
     @TaskAction
     public void run() {
-        CheckstyleInvoker.invoke(this);
+        Map<String, String> properties = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> e : getConfigProperties().entrySet()) {
+            properties.put(e.getKey(), e.getValue().toString());
+        }
+
+        // User provided their own config_loc
+        if (getConfigDirectory().isPresent()) {
+            String userProvidedConfigLoc = properties.get(CheckstyleAction.CONFIG_LOC_PROPERTY);
+            if (userProvidedConfigLoc!=null) {
+                DeprecationLogger.deprecateIndirectUsage("Adding 'config_loc' to checkstyle.configProperties")
+                        .withAdvice("This property is now ignored and the value of configDirectory is always used for 'config_loc'.")
+                        .withUpgradeGuideSection(5, "user_provided_config_loc_properties_are_ignored_by_checkstyle")
+                        .nagUser();
+            }
+        }
+
+        WorkQueue queue = getWorkExecutor().processIsolation();
+        queue.submit(CheckstyleAction.class, parameters -> {
+            parameters.getCheckstyleClasspath().from(getCheckstyleClasspath());
+            parameters.getClasspath().from(getClasspath());
+            parameters.getSource().from(getSource());
+
+            if (reports.getHtml().isEnabled()) {
+                parameters.getHtmlReportFile().set(reports.getHtml().getOutputLocation());
+                TextResource stylesheet = reports.getHtml().getStylesheet();
+                if (stylesheet != null) {
+                    parameters.getHtmlStylesheetFile().set(stylesheet.asFile());
+                }
+            }
+            if (reports.getXml().isEnabled()) {
+                parameters.getXmlReportFile().set(reports.getXml().getOutputLocation());
+            } else {
+                parameters.getXmlReportFile().set(new File(getTemporaryDir(), "checkstyle.xml"));
+            }
+
+            parameters.getMaxErrors().set(getMaxErrors());
+            parameters.getMaxWarnings().set(getMaxWarnings());
+            parameters.getShowViolations().set(isShowViolations());
+            parameters.getIgnoreFailures().set(isIgnoreFailures());
+
+            parameters.getConfigProperties().set(properties);
+
+            parameters.getConfigDirectory().set(getConfigDirectory());
+            parameters.getConfigFile().set(getConfigFile());
+        });
     }
 
     /**
