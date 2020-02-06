@@ -394,7 +394,7 @@ class CheckstylePluginVersionIntegrationTest extends MultiVersionIntegrationSpec
 
         then:
         executedAndNotSkipped(':checkstyleMain')
-        result.hasErrorOutput("[checkstyle] [WARN]") || result.hasErrorOutput("warning: Name 'class1' must match pattern")
+        result.hasErrorOutput("[ant:checkstyle] [WARN]") || result.hasErrorOutput("warning: Name 'class1' must match pattern")
     }
 
     private goodCode() {
