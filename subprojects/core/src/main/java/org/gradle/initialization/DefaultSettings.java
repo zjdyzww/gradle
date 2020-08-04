@@ -82,6 +82,9 @@ public abstract class DefaultSettings extends AbstractPluginAware implements Set
         this.startParameter = startParameter;
         services = serviceRegistryFactory.createFor(this);
         rootProjectDescriptor = createProjectDescriptor(null, settingsDir.getName(), settingsDir);
+        if (getBuildSrcDir().exists()) {
+            includeBuild(BUILD_SRC);
+        }
     }
 
     @Override

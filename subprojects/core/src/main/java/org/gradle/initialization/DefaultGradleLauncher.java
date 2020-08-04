@@ -230,7 +230,8 @@ public class DefaultGradleLauncher implements GradleLauncher {
 
     private void prepareProjects() {
         if (stage == Stage.LoadSettings) {
-            ClassLoaderScope baseProjectClassLoaderScope = buildSourceBuilder.buildAndCreateClassLoader(gradle);
+            SettingsInternal settings = gradle.getSettings();
+            ClassLoaderScope baseProjectClassLoaderScope = settings.getClassLoaderScope();
             gradle.setBaseProjectClassLoaderScope(baseProjectClassLoaderScope);
             projectsPreparer.prepareProjects(gradle);
             stage = Stage.Configure;
