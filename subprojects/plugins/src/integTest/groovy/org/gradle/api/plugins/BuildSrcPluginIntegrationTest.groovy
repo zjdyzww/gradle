@@ -171,7 +171,7 @@ class BuildSrcPluginIntegrationTest extends AbstractIntegrationSpec {
         outputContains("From MyPluginSub")
     }
 
-    def "Default buildSrc root project dependencies are on the api"() {
+    def "default buildSrc root project dependencies are on the api"() {
         when:
         file("buildSrc/settings.gradle") << "include ':subInBuildSrc'"
         file("buildSrc/subInBuildSrc/build.gradle") << """

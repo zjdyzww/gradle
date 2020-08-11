@@ -54,5 +54,6 @@ public interface ConfigurableIncludedBuild extends IncludedBuild {
      * @param configuration the configuration action for adding injected plugins
      * @since 6.7
      */
+    @Incubating
     void plugins(Action<? super InjectedPluginDependencies> configuration);
 }
