@@ -17,26 +17,36 @@
 package org.gradle.initialization.buildsrc;
 
 import org.gradle.api.Plugin;
-import org.gradle.api.Project;
-import org.gradle.api.artifacts.ConfigurablePublishArtifact;
-import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.artifacts.dsl.DependencyHandler;
+import org.gradle.api.internal.artifacts.publish.ArchivePublishArtifact;
+import org.gradle.api.internal.project.ProjectInternal;
+import org.gradle.configuration.project.PluginsProjectConfigureActions;
+import org.gradle.configuration.project.ProjectConfigureAction;
+import org.gradle.internal.service.CachingServiceLocator;
 
-public class BuildSrcProjectPlugin implements Plugin<Project> {
+import javax.inject.Inject;
+
+public abstract class BuildSrcProjectPlugin implements Plugin<ProjectInternal> {
+
+    @Inject
+    public abstract CachingServiceLocator getCachingServiceLocator();
+
     @Override
-    public void apply(Project project) {
-        // TODO: Need to replace BuildSrcClassPathModeConfigurationAction
-        // TODO: Delete all of BuildSrcProjectConfigurationAction
+    public void apply(ProjectInternal project) {
         // TODO: Deprecate this behavior
-        project.getPluginManager().apply("java-library");
-        project.getPluginManager().apply("groovy");
-
-        DependencyHandler dependencies = project.getDependencies();
-        dependencies.add("api", dependencies.gradleApi());
-        dependencies.add("api", dependencies.localGroovy());
+        // TODO: Delete all of BuildSrcProjectConfigurationAction
+        ProjectConfigureAction action = PluginsProjectConfigureActions.of(
+                BuildSrcProjectConfigurationAction.class,
+                getCachingServiceLocator());
+        action.execute(project);
 
         // TODO: buildSrc publications need to require "build" to run
+        project.getConfigurations().getByName("default").getAllArtifacts().all(artifact -> {
+            if (artifact instanceof ArchivePublishArtifact) {
+                ((ArchivePublishArtifact) artifact).builtBy(":build");
+            }
+        });
 
+        // TODO: Need to expose buildSrc classpath to root project
         // EVIL!
         project.getGradle().getParent().getRootProject().getBuildscript().getDependencies().add("classpath", project);
     }
