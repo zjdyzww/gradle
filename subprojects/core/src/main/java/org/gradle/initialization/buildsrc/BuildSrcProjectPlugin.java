@@ -17,7 +17,7 @@
 package org.gradle.initialization.buildsrc;
 
 import org.gradle.api.Plugin;
-import org.gradle.api.internal.artifacts.publish.ArchivePublishArtifact;
+import org.gradle.api.internal.artifacts.PublishArtifactInternal;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.configuration.project.PluginsProjectConfigureActions;
 import org.gradle.configuration.project.ProjectConfigureAction;
@@ -40,11 +40,6 @@ public abstract class BuildSrcProjectPlugin implements Plugin<ProjectInternal> {
         action.execute(project);
 
         // TODO: buildSrc publications need to require "build" to run
-        project.getConfigurations().getByName("default").getAllArtifacts().all(artifact -> {
-            if (artifact instanceof ArchivePublishArtifact) {
-                ((ArchivePublishArtifact) artifact).builtBy(":build");
-            }
-        });
 
         // TODO: Need to expose buildSrc classpath to root project
         // EVIL!

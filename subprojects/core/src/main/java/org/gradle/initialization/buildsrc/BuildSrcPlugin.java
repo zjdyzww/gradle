@@ -23,7 +23,7 @@ public class BuildSrcPlugin implements Plugin<Settings> {
     @Override
     public void apply(Settings settings) {
         settings.getGradle().settingsEvaluated(s -> {
-            s.getGradle().rootProject(rootProject -> rootProject.getPluginManager().apply(BuildSrcProjectPlugin.class));
+            s.getGradle().rootProject(rootProject -> rootProject.getPluginManager().apply("org.gradle.buildsrc.root-project"));
         });
     }
 }

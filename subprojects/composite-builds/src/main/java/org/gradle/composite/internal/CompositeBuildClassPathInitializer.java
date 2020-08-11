@@ -61,10 +61,16 @@ public class CompositeBuildClassPathInitializer implements ScriptClassPathInitia
             CompositeProjectComponentArtifactMetadata compositeBuildArtifact = (CompositeProjectComponentArtifactMetadata) artifact;
             BuildIdentifier targetBuild = compositeBuildArtifact.getComponentId().getBuild();
             assert !requestingBuild.equals(targetBuild);
-            Set<? extends Task> tasks = compositeBuildArtifact.getBuildDependencies().getDependencies(null);
-            for (Task task : tasks) {
-                includedBuildTaskGraph.addTask(requestingBuild, targetBuild, task.getPath());
+
+            if (targetBuild.getName().equals("buildSrc")) {
+                includedBuildTaskGraph.addTask(requestingBuild, targetBuild, ":build");
+            } else {
+                Set<? extends Task> tasks = compositeBuildArtifact.getBuildDependencies().getDependencies(null);
+                for (Task task : tasks) {
+                    includedBuildTaskGraph.addTask(requestingBuild, targetBuild, task.getPath());
+                }
             }
+
             found = true;
         }
         return found;
