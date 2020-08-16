@@ -30,9 +30,9 @@ import org.gradle.launcher.daemon.protocol.Build;
 import org.gradle.launcher.daemon.server.api.DaemonCommandExecution;
 import org.gradle.launcher.daemon.server.api.DaemonConnection;
 
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -69,8 +69,9 @@ public class LogToClient extends BuildCommandOnly {
     }
 
     private class AsynchronousLogDispatcher extends Thread {
+        private static final int QUEUE_SIZE = 1024;
         private final CountDownLatch completionLock = new CountDownLatch(1);
-        private final BlockingQueue<OutputEvent> eventQueue = new LinkedBlockingDeque<>();
+        private final BlockingQueue<OutputEvent> eventQueue = new ArrayBlockingQueue<>(QUEUE_SIZE);
         private final DaemonConnection connection;
         private final OutputEventListener listener;
         private final Lock dispatchLock = new ReentrantLock();
@@ -101,7 +102,11 @@ public class LogToClient extends BuildCommandOnly {
         }
 
         public void submit(OutputEvent event) {
-            eventQueue.add(event);
+            try {
+                eventQueue.put(event);
+            } catch (InterruptedException e) {
+                // Ignore: the processing thread has already quit
+            }
         }
 
         @Override
