@@ -18,6 +18,7 @@ package org.gradle.internal.build;
 
 import org.gradle.api.artifacts.component.BuildIdentifier;
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier;
+import org.gradle.api.internal.SettingsInternal;
 import org.gradle.api.internal.artifacts.DefaultProjectComponentIdentifier;
 import org.gradle.initialization.DefaultProjectDescriptor;
 import org.gradle.initialization.IncludedBuildSpec;
@@ -31,7 +32,10 @@ public abstract class AbstractBuildState implements BuildState {
 
     @Override
     public void assertCanAdd(IncludedBuildSpec includedBuildSpec) {
-        throw new UnsupportedOperationException("Cannot include build '" + includedBuildSpec.rootDir.getName() + "' in " + getBuildIdentifier() + ". This is not supported yet.");
+        // TODO: Open this up for all kinds of included builds.
+        if (!includedBuildSpec.rootDir.getName().equals(SettingsInternal.BUILD_SRC)) {
+            throw new UnsupportedOperationException("Cannot include build '" + includedBuildSpec.rootDir.getName() + "' in " + getBuildIdentifier() + ". This is not supported yet.");
+        }
     }
 
     @Override

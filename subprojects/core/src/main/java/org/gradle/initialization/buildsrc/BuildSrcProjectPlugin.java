@@ -17,9 +17,11 @@
 package org.gradle.initialization.buildsrc;
 
 import org.gradle.api.Plugin;
+import org.gradle.api.internal.initialization.ScriptHandlerInternal;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.configuration.project.PluginsProjectConfigureActions;
 import org.gradle.configuration.project.ProjectConfigureAction;
+import org.gradle.internal.hash.HashUtil;
 import org.gradle.internal.service.CachingServiceLocator;
 
 import javax.inject.Inject;
@@ -31,6 +33,10 @@ public abstract class BuildSrcProjectPlugin implements Plugin<ProjectInternal> {
 
     @Override
     public void apply(ProjectInternal project) {
+        if (project.getParent() != null) {
+            throw new IllegalStateException("This can only be applied to the root project.");
+        }
+
         // TODO: Deprecate this behavior
         // TODO: Delete all of BuildSrcProjectConfigurationAction
         ProjectConfigureAction action = PluginsProjectConfigureActions.of(
@@ -39,9 +45,5 @@ public abstract class BuildSrcProjectPlugin implements Plugin<ProjectInternal> {
         action.execute(project);
 
         // TODO: buildSrc publications need to require "build" to run
-
-        // TODO: Need to expose buildSrc classpath to root project
-        // EVIL!
-        project.getGradle().getParent().getRootProject().getBuildscript().addScriptClassPathDependency(project);
     }
 }

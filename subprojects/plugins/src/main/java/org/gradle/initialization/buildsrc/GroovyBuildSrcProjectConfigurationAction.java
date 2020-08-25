@@ -16,6 +16,7 @@
 
 package org.gradle.initialization.buildsrc;
 
+import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.plugins.GroovyPlugin;
@@ -29,8 +30,14 @@ public class GroovyBuildSrcProjectConfigurationAction implements BuildSrcProject
         project.getPluginManager().apply(JavaLibraryPlugin.class);
         project.getPluginManager().apply(GroovyPlugin.class);
 
+        String compileOnlyApiName = "compileOnlyApi";
+        Configuration compileOnlyApi = project.getConfigurations().maybeCreate(compileOnlyApiName);
+        project.getConfigurations().getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME).extendsFrom(compileOnlyApi);
+        project.getConfigurations().getByName(JavaPlugin.API_ELEMENTS_CONFIGURATION_NAME).extendsFrom(compileOnlyApi);
+
         DependencyHandler dependencies = project.getDependencies();
-        dependencies.add(JavaPlugin.API_CONFIGURATION_NAME, dependencies.gradleApi());
-        dependencies.add(JavaPlugin.API_CONFIGURATION_NAME, dependencies.localGroovy());
+        dependencies.add(compileOnlyApiName, dependencies.gradleApi());
+        dependencies.add(compileOnlyApiName, dependencies.localGroovy());
+        dependencies.add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, dependencies.gradleApi());
     }
 }

@@ -29,6 +29,7 @@ import org.gradle.api.internal.SettingsInternal;
 import org.gradle.api.internal.file.FileResolver;
 import org.gradle.api.internal.initialization.ClassLoaderScope;
 import org.gradle.api.internal.initialization.ScriptHandlerFactory;
+import org.gradle.api.internal.initialization.ScriptHandlerInternal;
 import org.gradle.api.internal.plugins.DefaultObjectConfigurationAction;
 import org.gradle.api.internal.plugins.PluginManagerInternal;
 import org.gradle.api.internal.project.AbstractPluginAware;
@@ -39,6 +40,7 @@ import org.gradle.configuration.ScriptPluginFactory;
 import org.gradle.groovy.scripts.ScriptSource;
 import org.gradle.internal.Actions;
 import org.gradle.internal.deprecation.DeprecationLogger;
+import org.gradle.internal.hash.HashUtil;
 import org.gradle.internal.resource.TextUriResourceLoader;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.internal.service.scopes.ServiceRegistryFactory;
@@ -85,7 +87,19 @@ public abstract class DefaultSettings extends AbstractPluginAware implements Set
         if (getBuildSrcDir().exists()) {
             // TODO: Disallow someone from adding buildSrc explicitly for now
             includeBuild(BUILD_SRC, buildSrc -> {
+                String coordinates = "gradle.internal:buildSrc_" + HashUtil.createCompactMD5(buildSrc.getProjectDir().getAbsolutePath());
+                // TODO: Need to expose buildSrc classpath to root project
+                gradle.rootProject(rootProject -> {
+                    ScriptHandler rootProjectBuildscript = rootProject.getBuildscript();
+                    ((ScriptHandlerInternal)rootProjectBuildscript).addScriptClassPathDependency(coordinates);
+                });
+
                 buildSrc.plugins(injectedPluginDependencies -> injectedPluginDependencies.id("org.gradle.buildsrc"));
+                buildSrc.dependencySubstitution(substitution -> {
+                    substitution.substitute(substitution.module(coordinates))
+                            .because("built-in buildSrc dependency")
+                            .with(substitution.project(":"));
+                });
             });
         }
     }
