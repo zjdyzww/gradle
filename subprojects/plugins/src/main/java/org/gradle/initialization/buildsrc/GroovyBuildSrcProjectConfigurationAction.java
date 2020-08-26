@@ -29,15 +29,11 @@ public class GroovyBuildSrcProjectConfigurationAction implements BuildSrcProject
     public void execute(ProjectInternal project) {
         project.getPluginManager().apply(JavaLibraryPlugin.class);
         project.getPluginManager().apply(GroovyPlugin.class);
+        project.getPluginManager().apply("java-gradle-plugin");
 
         String compileOnlyApiName = "compileOnlyApi";
-        Configuration compileOnlyApi = project.getConfigurations().maybeCreate(compileOnlyApiName);
-        project.getConfigurations().getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME).extendsFrom(compileOnlyApi);
-        project.getConfigurations().getByName(JavaPlugin.API_ELEMENTS_CONFIGURATION_NAME).extendsFrom(compileOnlyApi);
-
         DependencyHandler dependencies = project.getDependencies();
-        dependencies.add(compileOnlyApiName, dependencies.gradleApi());
         dependencies.add(compileOnlyApiName, dependencies.localGroovy());
-        dependencies.add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, dependencies.gradleApi());
+
     }
 }

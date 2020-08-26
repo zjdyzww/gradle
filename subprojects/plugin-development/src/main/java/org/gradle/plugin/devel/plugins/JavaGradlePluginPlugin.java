@@ -46,6 +46,7 @@ import org.gradle.api.tasks.testing.Test;
 import org.gradle.internal.Describables;
 import org.gradle.internal.DisplayName;
 import org.gradle.internal.deprecation.DeprecationLogger;
+import org.gradle.internal.hash.HashUtil;
 import org.gradle.plugin.devel.GradlePluginDevelopmentExtension;
 import org.gradle.plugin.devel.PluginDeclaration;
 import org.gradle.plugin.devel.tasks.GeneratePluginDescriptors;
@@ -150,6 +151,16 @@ public class JavaGradlePluginPlugin implements Plugin<Project> {
         configureDescriptorGeneration(project, extension);
         validatePluginDeclarations(project, extension);
         configurePluginValidations(project, extension);
+
+        if (project.getRootProject().getName().equals("buildSrc")) {
+            // HACK
+            ProjectInternal projectInternal = (ProjectInternal) project;
+            ProjectPublicationRegistry registry = projectInternal.getServices().get(ProjectPublicationRegistry.class);
+            String buildSrcPluginId = "buildSrc_" + HashUtil.createCompactMD5(project.getProjectDir().getAbsolutePath());
+            PluginDeclaration pluginDeclaration = new PluginDeclaration(buildSrcPluginId);
+            pluginDeclaration.setId(buildSrcPluginId);
+            registry.registerPublication(projectInternal, new LocalPluginPublication(pluginDeclaration));
+        }
     }
 
     private void registerPlugins(Project project, GradlePluginDevelopmentExtension extension) {

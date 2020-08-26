@@ -22,13 +22,18 @@ import org.gradle.api.artifacts.ModuleIdentifier;
 import org.gradle.api.artifacts.ModuleVersionSelector;
 import org.gradle.api.initialization.Settings;
 import org.gradle.api.internal.BuildDefinition;
+import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.internal.StartParameterInternal;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
 import org.gradle.api.internal.artifacts.DefaultModuleVersionSelector;
 import org.gradle.api.invocation.Gradle;
+import org.gradle.internal.hash.HashUtil;
 import org.gradle.plugin.management.internal.DefaultPluginRequest;
 import org.gradle.plugin.management.internal.PluginRequestInternal;
 import org.gradle.plugin.management.internal.PluginRequests;
+import org.gradle.plugin.use.internal.DefaultPluginId;
+
+import java.io.File;
 
 import static org.gradle.initialization.StartParameterBuildOptions.BuildScanOption;
 
@@ -47,6 +52,15 @@ public class DefaultAutoAppliedPluginRegistry implements AutoAppliedPluginRegist
 
     @Override
     public PluginRequests getAutoAppliedPlugins(Project target) {
+        if (target.getParent() == null) {
+            File buildSrcDir = ((GradleInternal)target.getGradle()).getSettings().getBuildSrcDir();
+            if (buildSrcDir.exists()) {
+                String buildSrcPluginId = "buildSrc_" + HashUtil.createCompactMD5(buildSrcDir.getAbsolutePath());
+                ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId("gradle.internal", buildSrcPluginId);
+                ModuleVersionSelector artifact = DefaultModuleVersionSelector.newSelector(moduleIdentifier, null);
+                return PluginRequests.of(new DefaultPluginRequest(new DefaultPluginId(buildSrcPluginId), null, false, null, "auto-injected from " + buildSrcDir, artifact));
+            }
+        }
         return PluginRequests.EMPTY;
     }
 
