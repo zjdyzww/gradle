@@ -146,4 +146,6 @@ public interface JavaPluginExtension {
     @Incubating
     JavaToolchainSpec toolchain(Action<? super JavaToolchainSpec> action);
 
+    @Incubating
+    void withConsistentResolution();
 }

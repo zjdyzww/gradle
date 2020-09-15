@@ -21,6 +21,7 @@ import org.gradle.api.Action;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
 import org.gradle.api.capabilities.Capability;
 import org.gradle.api.component.SoftwareComponentContainer;
@@ -31,6 +32,7 @@ import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.plugins.jvm.internal.JvmPluginServices;
 import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.internal.component.external.model.ProjectDerivedCapability;
 import org.gradle.internal.jvm.DefaultModularitySpec;
@@ -135,6 +137,30 @@ public class DefaultJavaPluginExtension implements JavaPluginExtension {
     public JavaToolchainSpec toolchain(Action<? super JavaToolchainSpec> action) {
         action.execute(toolchain);
         return toolchain;
+    }
+
+    @Override
+    public void withConsistentResolution() {
+        SourceSetContainer sourceSets = convention.getSourceSets();
+        sourceSets.configureEach(this::applyConsistentResolution);
+        SourceSet mainSourceSet = sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME);
+        SourceSet testSourceSet = sourceSets.getByName(SourceSet.TEST_SOURCE_SET_NAME);
+        Configuration mainCompileClasspath = findConfiguration(mainSourceSet.getCompileClasspathConfigurationName());
+        Configuration mainRuntimeClasspath = findConfiguration(mainSourceSet.getRuntimeClasspathConfigurationName());
+        Configuration testCompileClasspath = findConfiguration(testSourceSet.getCompileClasspathConfigurationName());
+        Configuration testRuntimeClasspath = findConfiguration(testSourceSet.getRuntimeClasspathConfigurationName());
+        testCompileClasspath.resolveConsistentlyWith(mainCompileClasspath);
+        testRuntimeClasspath.resolveConsistentlyWith(mainRuntimeClasspath);
+    }
+
+    private void applyConsistentResolution(SourceSet sourceSet) {
+        Configuration compileClasspath = findConfiguration(sourceSet.getCompileClasspathConfigurationName());
+        Configuration runtimeClasspath = findConfiguration(sourceSet.getRuntimeClasspathConfigurationName());
+        runtimeClasspath.resolveConsistentlyWith(compileClasspath);
+    }
+
+    private Configuration findConfiguration(String configName) {
+        return project.getConfigurations().getByName(configName);
     }
 
     private static String validateFeatureName(String name) {
