@@ -57,4 +57,28 @@ public class DefaultAttributeMatchingStrategy<T> implements AttributeMatchingStr
             disambiguationRules.pickFirst(comparator);
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DefaultAttributeMatchingStrategy<?> that = (DefaultAttributeMatchingStrategy<?>) o;
+
+        if (!compatibilityRules.equals(that.compatibilityRules)) {
+            return false;
+        }
+        return disambiguationRules.equals(that.disambiguationRules);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = compatibilityRules.hashCode();
+        result = 31 * result + disambiguationRules.hashCode();
+        return result;
+    }
 }

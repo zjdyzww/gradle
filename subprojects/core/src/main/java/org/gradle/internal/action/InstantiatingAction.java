@@ -77,4 +77,23 @@ public class InstantiatingAction<DETAILS> implements Action<DETAILS> {
     public interface ExceptionHandler<U> {
         void handleException(U target, Throwable throwable);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        InstantiatingAction<?> that = (InstantiatingAction<?>) o;
+
+        return rules.equals(that.rules);
+    }
+
+    @Override
+    public int hashCode() {
+        return rules.hashCode();
+    }
 }

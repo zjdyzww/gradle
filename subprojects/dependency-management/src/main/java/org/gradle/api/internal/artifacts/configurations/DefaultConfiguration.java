@@ -26,6 +26,7 @@ import org.gradle.api.Describable;
 import org.gradle.api.DomainObjectSet;
 import org.gradle.api.InvalidUserCodeException;
 import org.gradle.api.InvalidUserDataException;
+import org.gradle.api.Project;
 import org.gradle.api.artifacts.ArtifactCollection;
 import org.gradle.api.artifacts.ArtifactView;
 import org.gradle.api.artifacts.ConfigurablePublishArtifact;
@@ -37,6 +38,7 @@ import org.gradle.api.artifacts.DependencyConstraintSet;
 import org.gradle.api.artifacts.DependencyResolutionListener;
 import org.gradle.api.artifacts.DependencySet;
 import org.gradle.api.artifacts.ExcludeRule;
+import org.gradle.api.artifacts.ModuleIdentifier;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.gradle.api.artifacts.PublishArtifact;
 import org.gradle.api.artifacts.PublishArtifactSet;
@@ -46,6 +48,7 @@ import org.gradle.api.artifacts.ResolveException;
 import org.gradle.api.artifacts.ResolvedConfiguration;
 import org.gradle.api.artifacts.component.ComponentIdentifier;
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
+import org.gradle.api.artifacts.result.ComponentResult;
 import org.gradle.api.artifacts.result.DependencyResult;
 import org.gradle.api.artifacts.result.ResolutionResult;
 import org.gradle.api.artifacts.result.ResolvedArtifactResult;
@@ -58,6 +61,8 @@ import org.gradle.api.internal.CompositeDomainObjectSet;
 import org.gradle.api.internal.DefaultDomainObjectSet;
 import org.gradle.api.internal.DocumentationRegistry;
 import org.gradle.api.internal.DomainObjectContext;
+import org.gradle.api.internal.GradleInternal;
+import org.gradle.api.internal.SettingsInternal;
 import org.gradle.api.internal.artifacts.ConfigurationResolver;
 import org.gradle.api.internal.artifacts.DefaultDependencyConstraintSet;
 import org.gradle.api.internal.artifacts.DefaultDependencySet;
@@ -75,10 +80,12 @@ import org.gradle.api.internal.artifacts.ivyservice.ResolvedFilesCollectingVisit
 import org.gradle.api.internal.artifacts.ivyservice.moduleconverter.RootComponentMetadataBuilder;
 import org.gradle.api.internal.artifacts.ivyservice.resolveengine.artifact.ArtifactVisitor;
 import org.gradle.api.internal.artifacts.ivyservice.resolveengine.artifact.SelectedArtifactSet;
+import org.gradle.api.internal.artifacts.ivyservice.resolveengine.consistency.CrossProjectResolutionConsistencyService;
 import org.gradle.api.internal.artifacts.ivyservice.resolveengine.projectresult.ResolvedProjectConfiguration;
 import org.gradle.api.internal.artifacts.transform.DefaultExtraExecutionGraphDependenciesResolverFactory;
 import org.gradle.api.internal.artifacts.transform.ExtraExecutionGraphDependenciesResolverFactory;
 import org.gradle.api.internal.attributes.AttributeContainerInternal;
+import org.gradle.api.internal.attributes.AttributesSchemaInternal;
 import org.gradle.api.internal.attributes.ImmutableAttributeContainerWithErrorMessage;
 import org.gradle.api.internal.attributes.ImmutableAttributes;
 import org.gradle.api.internal.attributes.ImmutableAttributesFactory;
@@ -89,7 +96,9 @@ import org.gradle.api.internal.file.FileCollectionStructureVisitor;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.internal.project.ProjectStateRegistry;
 import org.gradle.api.internal.tasks.FailureCollectingTaskDependencyResolveContext;
+import org.gradle.api.internal.tasks.NodeExecutionContext;
 import org.gradle.api.internal.tasks.TaskDependencyResolveContext;
+import org.gradle.api.internal.tasks.WorkNodeAction;
 import org.gradle.api.specs.Spec;
 import org.gradle.api.specs.Specs;
 import org.gradle.api.tasks.TaskDependency;
@@ -131,11 +140,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
-import static org.gradle.api.internal.artifacts.configurations.ConfigurationInternal.InternalState.ARTIFACTS_RESOLVED;
-import static org.gradle.api.internal.artifacts.configurations.ConfigurationInternal.InternalState.BUILD_DEPENDENCIES_RESOLVED;
-import static org.gradle.api.internal.artifacts.configurations.ConfigurationInternal.InternalState.GRAPH_RESOLVED;
-import static org.gradle.api.internal.artifacts.configurations.ConfigurationInternal.InternalState.UNRESOLVED;
+import static org.gradle.api.internal.artifacts.configurations.ConfigurationInternal.InternalState.*;
 import static org.gradle.util.ConfigureUtil.configure;
 
 @SuppressWarnings("rawtypes")
@@ -144,6 +151,7 @@ public class DefaultConfiguration extends AbstractFileCollection implements Conf
     private static final Action<Throwable> DEFAULT_ERROR_HANDLER = throwable -> {
         throw UncheckedException.throwAsUncheckedException(throwable);
     };
+    private static final String GLOBAL_DEPENDENCY_RESOLUTION_CONSISTENCY_REASON = "Global dependency resolution consistency";
 
     private final ConfigurationResolver resolver;
     private final ListenerManager listenerManager;
@@ -678,10 +686,67 @@ public class DefaultConfiguration extends AbstractFileCollection implements Conf
     }
 
     private void maybeConfigureConsistentResolution() {
+        if (owner instanceof ProjectInternal) {
+            ProjectInternal project = (ProjectInternal) this.owner;
+            GradleInternal gradle = project.getGradle();
+            SettingsInternal settings = safeGetSettings(gradle);
+            if (settings != null && settings.isCrossProjectResolutionConsistencyEnabled()) {
+                Set<Configuration> affectedConfigurations = collectConfigurationsParticipatingToGlobalResolution(project);
+                if (affectedConfigurations.contains(this)) {
+                    CrossProjectResolutionConsistencyService consistencyService = project.getServices().get(CrossProjectResolutionConsistencyService.class);
+                    DefaultCrossProjectResolutionBuilder builder = new DefaultCrossProjectResolutionBuilder();
+                    consistencyService.resolve(configurationAttributes.asImmutable(), (AttributesSchemaInternal) project.getDependencies().getAttributesSchema(), builder);
+                    if (!builder.unresolved.isEmpty()) {
+                        validateGlobalResolutionResult(builder);
+                    }
+                    return;
+                }
+                return;
+            }
+        }
         if (consistentResolutionSource != null) {
             assertConsistentResolutionSource();
             consistentResolutionSource.getIncoming().getResolutionResult().allComponents(this::registerConsistentResolutionConstraint);
         }
+    }
+
+    @Nullable
+    private static SettingsInternal safeGetSettings(GradleInternal gradle) {
+        try {
+            return gradle.getSettings();
+        } catch (IllegalStateException e) {
+            // This happens in project builder, used in testing
+            return null;
+        }
+    }
+
+    private static Set<Configuration> collectConfigurationsParticipatingToGlobalResolution(ProjectInternal project) {
+        Set<Configuration> affectedConfigurations = Sets.newHashSet();
+        for (Configuration configuration : project.getConfigurations()) {
+            Configuration consistentResolutionSource = ((ConfigurationInternal) configuration).getConsistentResolutionSource();
+            if (consistentResolutionSource != null) {
+                affectedConfigurations.add(configuration);
+                affectedConfigurations.add(consistentResolutionSource);
+            }
+        }
+        return affectedConfigurations;
+    }
+
+    private void validateGlobalResolutionResult(DefaultCrossProjectResolutionBuilder builder) {
+        getIncoming().afterResolve(rd -> {
+            Set<ModuleIdentifier> seenInGraph = rd.getResolutionResult()
+                .getAllComponents()
+                .stream()
+                .map(ComponentResult::getId)
+                .filter(ModuleComponentIdentifier.class::isInstance)
+                .map(ModuleComponentIdentifier.class::cast)
+                .map(ModuleComponentIdentifier::getModuleIdentifier)
+                .collect(Collectors.toSet());
+            Set<ModuleIdentifier> unresolved = ImmutableSet.copyOf(Sets.intersection(seenInGraph, builder.unresolved));
+            if (!unresolved.isEmpty()) {
+                throw new RuntimeException("The following modules were found in the dependency graph but didn't have an appropriate solution in the cross-project dependency graph resolution: " + unresolved);
+            }
+        });
     }
 
     private void assertConsistentResolutionSource() {
@@ -693,13 +758,17 @@ public class DefaultConfiguration extends AbstractFileCollection implements Conf
     private void registerConsistentResolutionConstraint(ResolvedComponentResult result) {
         if (result.getId() instanceof ModuleComponentIdentifier) {
             ModuleVersionIdentifier moduleVersion = result.getModuleVersion();
-            DefaultDependencyConstraint constraint = DefaultDependencyConstraint.of(
-                moduleVersion.getGroup(),
-                moduleVersion.getName(),
-                vc -> vc.strictly(moduleVersion.getVersion()));
-            constraint.because(consistentResolutionReason);
-            this.dependencyConstraints.addInternalDependencyConstraint(constraint);
+            registerConsistentResolutionConstraint(moduleVersion, consistentResolutionReason);
         }
+    }
+
+    private void registerConsistentResolutionConstraint(ModuleVersionIdentifier moduleVersion, String reason) {
+        DefaultDependencyConstraint constraint = DefaultDependencyConstraint.of(
+            moduleVersion.getGroup(),
+            moduleVersion.getName(),
+            vc -> vc.strictly(moduleVersion.getVersion()));
+        constraint.because(reason);
+        this.dependencyConstraints.addInternalDependencyConstraint(constraint);
     }
 
     private void performPreResolveActions(ResolvableDependencies incoming) {
@@ -959,6 +1028,12 @@ public class DefaultConfiguration extends AbstractFileCollection implements Conf
     @Override
     public OutgoingVariant convertToOutgoingVariant() {
         return outgoing.convertToOutgoingVariant();
+    }
+
+    @Nullable
+    @Override
+    public Configuration getConsistentResolutionSource() {
+        return consistentResolutionSource;
     }
 
     @Override
@@ -1895,6 +1970,48 @@ public class DefaultConfiguration extends AbstractFileCollection implements Conf
         @Override
         public PublishArtifactSet getPublishArtifactSet() {
             return getAllArtifacts();
+        }
+    }
+
+    public static class ResolveGraphAction implements WorkNodeAction {
+        private final DefaultConfiguration configuration;
+
+        public ResolveGraphAction(DefaultConfiguration configuration) {
+            this.configuration = configuration;
+        }
+
+        @Override
+        public String toString() {
+            return "resolve graph for " + configuration;
+        }
+
+        @Nullable
+        @Override
+        public Project getProject() {
+            return configuration.owner.getProject();
+        }
+
+        @Override
+        public void visitDependencies(TaskDependencyResolveContext context) {
+        }
+
+        @Override
+        public void run(NodeExecutionContext context) {
+            configuration.resolveExclusively(ARTIFACTS_RESOLVED);
+        }
+    }
+
+    private class DefaultCrossProjectResolutionBuilder implements CrossProjectResolutionConsistencyService.CrossProjectConsistencyResolutionBuilder {
+        private final Set<ModuleIdentifier> unresolved = Sets.newLinkedHashSet();
+
+        @Override
+        public void resolved(ModuleVersionIdentifier mvi) {
+            registerConsistentResolutionConstraint(mvi, GLOBAL_DEPENDENCY_RESOLUTION_CONSISTENCY_REASON);
+        }
+
+        @Override
+        public void unresolved(ModuleIdentifier id) {
+            unresolved.add(id);
         }
     }
 }

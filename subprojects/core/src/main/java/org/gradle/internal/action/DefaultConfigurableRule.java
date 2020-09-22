@@ -84,12 +84,12 @@ public class DefaultConfigurableRule<DETAILS> implements ConfigurableRule<DETAIL
         DefaultConfigurableRule<?> that = (DefaultConfigurableRule<?>) o;
         return cacheable == that.cacheable &&
             Objects.equal(rule, that.rule) &&
-            Objects.equal(ruleParams, that.ruleParams);
+            Objects.equal(ruleParams.asSnapshot(), that.ruleParams.asSnapshot());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(rule, ruleParams, cacheable);
+        return Objects.hashCode(rule, ruleParams.asSnapshot(), cacheable);
     }
 
     @Override

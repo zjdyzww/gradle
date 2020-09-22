@@ -93,4 +93,23 @@ public class DefaultCompatibilityRuleChain<T> implements CompatibilityRuleChain<
             throw new AttributeMatchException(String.format("Could not determine whether value %s is compatible with value %s using %s.", details.getProducerValue(), details.getConsumerValue(), ModelType.of(rule).getDisplayName()), throwable);
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DefaultCompatibilityRuleChain<?> that = (DefaultCompatibilityRuleChain<?>) o;
+
+        return rules.equals(that.rules);
+    }
+
+    @Override
+    public int hashCode() {
+        return rules.hashCode();
+    }
 }

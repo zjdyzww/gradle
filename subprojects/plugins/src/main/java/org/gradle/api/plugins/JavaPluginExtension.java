@@ -146,6 +146,11 @@ public interface JavaPluginExtension {
     @Incubating
     JavaToolchainSpec toolchain(Action<? super JavaToolchainSpec> action);
 
+    /**
+     * Enables consistent dependency resolution for this project.
+     *
+     * @since 6.8
+     */
     @Incubating
     void withConsistentResolution();
 }

@@ -76,9 +76,9 @@ import org.gradle.api.internal.artifacts.result.DefaultResolvedArtifactResult
 import org.gradle.api.internal.artifacts.result.DefaultResolvedVariantResult
 import org.gradle.api.internal.artifacts.type.DefaultArtifactTypeContainer
 import org.gradle.api.internal.attributes.DefaultAttributeMatchingStrategy
-import org.gradle.api.internal.attributes.DefaultAttributesSchema
 import org.gradle.api.internal.attributes.DefaultCompatibilityRuleChain
 import org.gradle.api.internal.attributes.DefaultDisambiguationRuleChain
+import org.gradle.api.internal.attributes.OverridableAttributesSchema
 import org.gradle.api.internal.project.DefaultProject
 import org.gradle.api.internal.tasks.DefaultSourceSet
 import org.gradle.api.internal.tasks.DefaultSourceSetContainer
@@ -97,7 +97,6 @@ import java.util.concurrent.Executor
 import java.util.concurrent.Executors.DefaultThreadFactory
 import java.util.concurrent.Executors.FinalizableDelegatedExecutorService
 import java.util.concurrent.ThreadFactory
-
 
 class ConfigurationCacheUnsupportedTypesIntegrationTest extends AbstractConfigurationCacheIntegrationTest {
 
@@ -199,7 +198,7 @@ class ConfigurationCacheUnsupportedTypesIntegrationTest extends AbstractConfigur
         DefaultDependencyConstraintHandler    | DependencyConstraintHandler    | "project.dependencies.constraints"
         DefaultComponentMetadataHandler       | ComponentMetadataHandler       | "project.dependencies.components"
         DefaultComponentModuleMetadataHandler | ComponentModuleMetadataHandler | "project.dependencies.modules"
-        DefaultAttributesSchema               | AttributesSchema               | "project.dependencies.attributesSchema"
+        OverridableAttributesSchema           | AttributesSchema               | "project.dependencies.attributesSchema"
         DefaultAttributeMatchingStrategy      | AttributeMatchingStrategy      | "project.dependencies.attributesSchema.attribute(Usage.USAGE_ATTRIBUTE)"
         DefaultCompatibilityRuleChain         | CompatibilityRuleChain         | "project.dependencies.attributesSchema.attribute(Usage.USAGE_ATTRIBUTE).compatibilityRules"
         DefaultDisambiguationRuleChain        | DisambiguationRuleChain        | "project.dependencies.attributesSchema.attribute(Usage.USAGE_ATTRIBUTE).disambiguationRules"

@@ -52,4 +52,28 @@ public class DefaultOrderedDisambiguationRule<T> implements Action<MultipleCandi
             }
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DefaultOrderedDisambiguationRule<?> that = (DefaultOrderedDisambiguationRule<?>) o;
+
+        if (pickFirst != that.pickFirst) {
+            return false;
+        }
+        return comparator.equals(that.comparator);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = comparator.hashCode();
+        result = 31 * result + (pickFirst ? 1 : 0);
+        return result;
+    }
 }

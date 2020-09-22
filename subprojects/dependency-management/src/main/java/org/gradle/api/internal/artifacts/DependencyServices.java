@@ -16,10 +16,15 @@
 
 package org.gradle.api.internal.artifacts;
 
+import org.gradle.api.internal.GradleInternal;
+import org.gradle.api.internal.artifacts.ivyservice.resolveengine.consistency.CrossProjectResolutionConsistencyService;
+import org.gradle.api.internal.artifacts.ivyservice.resolveengine.consistency.DefaultCrossProjectResolutionConsistencyService;
 import org.gradle.api.internal.artifacts.transform.ArtifactTransformListener;
 import org.gradle.api.internal.artifacts.transform.DefaultTransformationNodeRegistry;
 import org.gradle.api.internal.artifacts.transform.TransformationNodeDependencyResolver;
 import org.gradle.api.internal.artifacts.transform.TransformationNodeRegistry;
+import org.gradle.api.invocation.Gradle;
+import org.gradle.internal.InternalBuildAdapter;
 import org.gradle.internal.event.ListenerManager;
 import org.gradle.internal.operations.BuildOperationExecutor;
 import org.gradle.internal.service.ServiceRegistration;
@@ -53,6 +58,22 @@ public class DependencyServices extends AbstractPluginServiceRegistry {
 
     @SuppressWarnings("unused")
     private static class DependencyManagementGradleServices {
+        void configure(ServiceRegistration registration, ListenerManager listenerManager, CrossProjectResolutionConsistencyService resolutionConsistencyService) {
+            listenerManager.addListener(new InternalBuildAdapter() {
+                @Override
+                public void projectsLoaded(Gradle gradle) {
+                    GradleInternal grd = (GradleInternal) gradle;
+                    if (grd.getSettings().isCrossProjectResolutionConsistencyEnabled()) {
+                        grd.getRootProject().getAllprojects().forEach(resolutionConsistencyService::optIntoGlobalConsistency);
+                    }
+                }
+            });
+        }
+
+        CrossProjectResolutionConsistencyService createGlobalResolutionConsistencyService(CrossProjectResolutionServices crossProjectResolutionServices, BuildOperationExecutor buildOperationExecutor) {
+            return new DefaultCrossProjectResolutionConsistencyService(buildOperationExecutor, crossProjectResolutionServices::getDependencyResolutionServices);
+        }
+
         ArtifactTransformListener createArtifactTransformListener(ListenerManager listenerManager) {
             return listenerManager.getBroadcaster(ArtifactTransformListener.class);
         }
@@ -65,4 +86,5 @@ public class DependencyServices extends AbstractPluginServiceRegistry {
             return new TransformationNodeDependencyResolver();
         }
     }
+
 }

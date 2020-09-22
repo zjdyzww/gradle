@@ -32,7 +32,7 @@ import java.util.Collections;
  * A limited use, project dependency constraint mostly aimed at publishing
  * platforms.
  */
-public class DefaultProjectDependencyConstraint implements DependencyConstraintInternal {
+public class DefaultProjectDependencyConstraint implements ProjectDependencyConstraint {
     private final ProjectDependency projectDependency;
     private String reason;
     private boolean force;

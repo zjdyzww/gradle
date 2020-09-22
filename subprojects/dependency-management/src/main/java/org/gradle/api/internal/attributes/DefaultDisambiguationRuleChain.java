@@ -84,6 +84,25 @@ public class DefaultDisambiguationRuleChain<T> implements DisambiguationRuleChai
         return !rules.isEmpty();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DefaultDisambiguationRuleChain<?> that = (DefaultDisambiguationRuleChain<?>) o;
+
+        return rules.equals(that.rules);
+    }
+
+    @Override
+    public int hashCode() {
+        return rules.hashCode();
+    }
+
     private static class ExceptionHandler<T> implements InstantiatingAction.ExceptionHandler<MultipleCandidatesDetails<T>> {
 
         private final Class<? extends AttributeDisambiguationRule<T>> rule;

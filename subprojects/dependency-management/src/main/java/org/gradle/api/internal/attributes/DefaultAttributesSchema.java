@@ -345,4 +345,22 @@ public class DefaultAttributesSchema implements AttributesSchemaInternal, Attrib
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DefaultAttributesSchema that = (DefaultAttributesSchema) o;
+
+        return strategies.equals(that.strategies);
+    }
+
+    @Override
+    public int hashCode() {
+        return strategies.hashCode();
+    }
 }
