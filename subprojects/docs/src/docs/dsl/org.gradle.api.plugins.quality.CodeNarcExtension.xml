@@ -13,7 +13,7 @@
                 <td><literal>1.2.1</literal></td>
             </tr>
             <tr>
-                <td>reportsDir</td>
+                <td>reportsDirectory</td>
                 <td><literal><replaceable>${project.reporting.baseDir}</replaceable>/codenarc</literal></td>
             </tr>
             <tr>

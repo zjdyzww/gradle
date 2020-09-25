@@ -7,6 +7,14 @@
             "changes": [
                 "Constructor has been removed"
             ]
+        },
+        {
+            "type": "org.gradle.api.plugins.quality.CodeQualityExtension",
+            "member": "Method org.gradle.api.plugins.quality.CodeQualityExtension.getReportsDirectory()",
+            "acceptation": "Replace existing stable `reportsDir` property",
+            "changes": [
+                "METHOD_ADDED_TO_PUBLIC_CLASS"
+            ]
         }
     ]
 }

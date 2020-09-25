@@ -55,7 +55,7 @@ class CheckstylePluginTest extends AbstractProjectBuilderSpec {
         extension.configDirectory.get().getAsFile() == project.file("config/checkstyle")
         extension.config.inputFiles.singleFile == project.file("config/checkstyle/checkstyle.xml")
         extension.configProperties == [:]
-        extension.reportsDir == project.file("build/reports/checkstyle")
+        extension.reportsDirectory.get().asFile == project.file("build/reports/checkstyle")
         !extension.ignoreFailures
     }
 
@@ -134,7 +134,7 @@ class CheckstylePluginTest extends AbstractProjectBuilderSpec {
             config = project.resources.text.fromFile("checkstyle-config")
             configDirectory.set(project.file("custom"))
             configProperties = [foo: "foo"]
-            reportsDir = project.file("checkstyle-reports")
+            reportsDirectory.set(project.file("checkstyle-reports"))
             ignoreFailures = true
             showViolations = true
             maxErrors = 1
@@ -175,7 +175,7 @@ class CheckstylePluginTest extends AbstractProjectBuilderSpec {
             config = project.resources.text.fromFile("checkstyle-config")
             configDirectory.set(project.file("custom"))
             configProperties = [foo: "foo"]
-            reportsDir = project.file("checkstyle-reports")
+            reportsDirectory.set(project.file("checkstyle-reports"))
             ignoreFailures = true
         }
 

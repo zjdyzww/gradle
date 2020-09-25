@@ -17,8 +17,7 @@ package org.gradle.api.plugins.quality;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.file.ProjectLayout;
-import org.gradle.api.file.RegularFile;
+import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.internal.ConventionMapping;
 import org.gradle.api.internal.plugins.DslObject;
 import org.gradle.api.plugins.GroovyBasePlugin;
@@ -27,8 +26,6 @@ import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.internal.metaobject.DynamicObject;
-
-import java.io.File;
 
 import static org.gradle.api.internal.lambdas.SerializableLambdas.action;
 
@@ -96,16 +93,13 @@ public class CodeNarcPlugin extends AbstractCodeQualityPlugin<CodeNarc> {
     }
 
     private void configureReportsConventionMapping(CodeNarc task, final String baseName) {
-        ProjectLayout layout = project.getLayout();
         ProviderFactory providers = project.getProviders();
         Provider<String> reportFormat = providers.provider(() -> extension.getReportFormat());
-        Provider<RegularFile> reportsDir = layout.file(providers.provider(() -> extension.getReportsDir()));
+        DirectoryProperty reportsDir = extension.getReportsDirectory();
         task.getReports().all(action(report -> {
             report.getRequired().convention(providers.provider(() -> report.getName().equals(reportFormat.get())));
-            report.getOutputLocation().convention(layout.getProjectDirectory().file(providers.provider(() -> {
-                String fileSuffix = report.getName().equals("text") ? "txt" : report.getName();
-                return new File(reportsDir.get().getAsFile(), baseName + "." + fileSuffix).getAbsolutePath();
-            })));
+            String fileSuffix = report.getName().equals("text") ? "txt" : report.getName();
+            report.getOutputLocation().convention(reportsDir.file(baseName + "." + fileSuffix));
         }));
     }
 

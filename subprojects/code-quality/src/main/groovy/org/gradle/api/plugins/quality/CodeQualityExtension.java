@@ -15,8 +15,13 @@
  */
 package org.gradle.api.plugins.quality;
 
+import org.gradle.api.Incubating;
+import org.gradle.api.file.DirectoryProperty;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.tasks.SourceSet;
+import org.gradle.internal.deprecation.DeprecationLogger;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.util.Collection;
 
@@ -28,7 +33,32 @@ public abstract class CodeQualityExtension {
     private String toolVersion;
     private Collection<SourceSet> sourceSets;
     private boolean ignoreFailures;
+
+    @Nullable
+    private final DirectoryProperty reportsDirectory;
+
+    @Deprecated
     private File reportsDir;
+
+    @Deprecated
+    public CodeQualityExtension() {
+        DeprecationLogger.deprecateMethod(CodeQualityExtension.class, "constructor CodeQualityExtension()")
+            .replaceWith("constructor CodeQualityExtension(ObjectFactory)")
+            .willBeRemovedInGradle8()
+            .withUpgradeGuideSection(6, "TODO") // TODO
+            .nagUser();
+        reportsDirectory = null;
+    }
+
+    /**
+     * Creates a new code quality extension.
+     *
+     * @since 6.8
+     */
+    @Incubating // TODO no non-deprecated replacement ...
+    public CodeQualityExtension(ObjectFactory objects) {
+        reportsDirectory = objects.directoryProperty();
+    }
 
     /**
      * The version of the code quality tool to be used.
@@ -78,15 +108,59 @@ public abstract class CodeQualityExtension {
 
     /**
      * The directory where reports will be generated.
+     *
+     * @since 6.8
      */
+    public DirectoryProperty getReportsDirectory() {
+        if (reportsDirectory == null) {
+            throw new IllegalStateException(
+                "This plugin uses a deprecated constructor of " + getClass().getName() + ". " +
+                    "You need to use the deprecated `reportsDir` property instead."
+            );
+        }
+        return reportsDirectory;
+    }
+
+    /**
+     * The directory where reports will be generated.
+     */
+    @Deprecated
     public File getReportsDir() {
+        nagReportsDirPropertyDeprecation();
+        if (reportsDirectory != null) {
+            return reportsDirectory.get().getAsFile();
+        }
         return reportsDir;
     }
 
     /**
      * The directory where reports will be generated.
      */
+    @Deprecated
     public void setReportsDir(File reportsDir) {
-        this.reportsDir = reportsDir;
+        nagReportsDirPropertyDeprecation();
+        if (reportsDirectory != null) {
+            reportsDirectory.set(reportsDir);
+        } else {
+            this.reportsDir = reportsDir;
+        }
+    }
+
+    private void nagReportsDirPropertyDeprecation() {
+        DeprecationLogger.deprecateProperty(getConcreteType(), "reportsDir")
+            .replaceWith("reportsDirectory")
+            .willBeRemovedInGradle8()
+            .withDslReference(getConcreteType(), "reportsDirectory")
+            .nagUser();
+    }
+
+    /**
+     * The concrete type of the extension, for documentation purpose.
+     *
+     * @since 6.8
+     */
+    @Incubating
+    protected Class<? extends CodeQualityExtension> getConcreteType() {
+        return CodeQualityExtension.class;
     }
 }

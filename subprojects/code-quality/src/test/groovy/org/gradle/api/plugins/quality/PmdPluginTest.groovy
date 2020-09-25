@@ -53,7 +53,7 @@ class PmdPluginTest extends AbstractProjectBuilderSpec {
         extension.ruleSets == ["category/java/errorprone.xml"]
         extension.ruleSetConfig == null
         extension.ruleSetFiles.empty
-        extension.reportsDir == project.file("build/reports/pmd")
+        extension.reportsDirectory.get().asFile == project.file("build/reports/pmd")
         !extension.ignoreFailures
         extension.maxFailures.get() == 0
         extension.rulesMinimumPriority.get() == 5
@@ -158,7 +158,7 @@ class PmdPluginTest extends AbstractProjectBuilderSpec {
             ruleSets = ["java-braces", "java-unusedcode"]
             ruleSetConfig = project.resources.text.fromString("ruleset contents")
             ruleSetFiles = project.getLayout().files("my-ruleset.xml")
-            reportsDir = project.file("pmd-reports")
+            reportsDirectory.set(project.file("pmd-reports"))
             ignoreFailures = true
             maxFailures = 17
             rulesMinimumPriority = 3
@@ -196,7 +196,7 @@ class PmdPluginTest extends AbstractProjectBuilderSpec {
             ruleSets = ["java-braces", "java-unusedcode"]
             ruleSetConfig = project.resources.text.fromString("ruleset contents")
             ruleSetFiles = project.getLayout().files("my-ruleset.xml")
-            reportsDir = project.file("pmd-reports")
+            reportsDirectory.set(project.file("pmd-reports"))
             ignoreFailures = true
             maxFailures = 5
             rulesMinimumPriority = 3

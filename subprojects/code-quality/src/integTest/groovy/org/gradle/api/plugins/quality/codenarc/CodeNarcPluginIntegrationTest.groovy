@@ -105,7 +105,7 @@ class CodeNarcPluginIntegrationTest extends WellBehavedPluginTest {
                 maxPriority2Violations = 50
                 maxPriority3Violations = 200
                 reportFormat = "xml"
-                reportsDir = project.file("codenarc-reports")
+                reportsDirectory = project.file("codenarc-reports")
                 ignoreFailures = true
             }
             def hasCustomizedSettings(taskName, sourceSet) {

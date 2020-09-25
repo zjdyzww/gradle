@@ -46,10 +46,16 @@ public class PmdExtension extends CodeQualityExtension {
     private Property<Boolean> incrementalAnalysis;
 
     public PmdExtension(Project project) {
+        super(project.getObjects());
         this.project = project;
         this.rulesMinimumPriority = project.getObjects().property(Integer.class).convention(5);
         this.incrementalAnalysis = project.getObjects().property(Boolean.class).convention(true);
         this.maxFailures = project.getObjects().property(Integer.class).convention(0);
+    }
+
+    @Override
+    protected Class<? extends CodeQualityExtension> getConcreteType() {
+        return PmdExtension.class;
     }
 
     /**

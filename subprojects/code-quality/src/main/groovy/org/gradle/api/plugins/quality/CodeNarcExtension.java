@@ -41,7 +41,13 @@ public class CodeNarcExtension extends CodeQualityExtension {
     private String reportFormat;
 
     public CodeNarcExtension(Project project) {
+        super(project.getObjects());
         this.project = project;
+    }
+
+    @Override
+    protected Class<? extends CodeQualityExtension> getConcreteType() {
+        return CodeNarcExtension.class;
     }
 
     /**

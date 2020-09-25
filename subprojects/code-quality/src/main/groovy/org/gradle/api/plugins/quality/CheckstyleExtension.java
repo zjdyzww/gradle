@@ -42,8 +42,14 @@ public class CheckstyleExtension extends CodeQualityExtension {
     private final DirectoryProperty configDirectory;
 
     public CheckstyleExtension(Project project) {
+        super(project.getObjects());
         this.project = project;
         this.configDirectory = project.getObjects().directoryProperty();
+    }
+
+    @Override
+    protected Class<? extends CodeQualityExtension> getConcreteType() {
+        return CheckstyleExtension.class;
     }
 
     /**

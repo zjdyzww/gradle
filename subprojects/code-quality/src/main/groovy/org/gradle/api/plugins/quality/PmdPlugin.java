@@ -17,16 +17,12 @@ package org.gradle.api.plugins.quality;
 
 import org.gradle.api.JavaVersion;
 import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.file.ProjectLayout;
-import org.gradle.api.file.RegularFile;
+import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.internal.ConventionMapping;
 import org.gradle.api.plugins.quality.internal.AbstractCodeQualityPlugin;
-import org.gradle.api.provider.Provider;
-import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.util.VersionNumber;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -117,17 +113,10 @@ public class PmdPlugin extends AbstractCodeQualityPlugin<Pmd> {
     }
 
     private void configureReportsConventionMapping(Pmd task, final String baseName) {
-        ProjectLayout layout = project.getLayout();
-        ProviderFactory providers = project.getProviders();
-        Provider<RegularFile> reportsDir = layout.file(providers.provider(() -> extension.getReportsDir()));
+        DirectoryProperty reportsDir = extension.getReportsDirectory();
         task.getReports().all(action(report -> {
             report.getRequired().convention(true);
-            report.getOutputLocation().convention(
-                layout.getProjectDirectory().file(providers.provider(() -> {
-                    String reportFileName = baseName + "." + report.getName();
-                    return new File(reportsDir.get().getAsFile(), reportFileName).getAbsolutePath();
-                }))
-            );
+            report.getOutputLocation().convention(reportsDir.file(baseName + "." + report.getName()));
         }));
     }
 

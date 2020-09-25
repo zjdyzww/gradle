@@ -13,7 +13,7 @@
                 <td><literal>6.15.0</literal></td>
             </tr>
             <tr>
-                <td>reportsDir</td>
+                <td>reportsDirectory</td>
                 <td><literal><replaceable>${project.reporting.baseDir}</replaceable>/pmd</literal></td>
             </tr>
             <tr>
