@@ -136,4 +136,20 @@ public interface InputFingerprinter {
         ImmutableSortedMap<String, ValueSnapshot> getValueSnapshots();
         ImmutableSortedMap<String, CurrentFileCollectionFingerprint> getFileFingerprints();
     }
+
+    static <K extends Comparable<?>, V> ImmutableSortedMap<K, V> union(
+        ImmutableSortedMap<K, V> a,
+        ImmutableSortedMap<K, V> b
+    ) {
+        if (a.isEmpty()) {
+            return b;
+        } else if (b.isEmpty()) {
+            return a;
+        } else {
+            return ImmutableSortedMap.<K, V>naturalOrder()
+                .putAll(a)
+                .putAll(b)
+                .build();
+        }
+    }
 }
