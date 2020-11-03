@@ -47,7 +47,7 @@ public final class CalculateTaskGraphBuildOperationType implements BuildOperatio
         long getTaskId();
 
     }
-    
+
     /**
      *
      * @since 6.2
@@ -72,7 +72,7 @@ public final class CalculateTaskGraphBuildOperationType implements BuildOperatio
     public interface Details {
 
         /**
-         * The build path the calculated task graph belongs too.
+         * The build path the calculated task graph belongs to.
          * Never null.
          *
          * @since 4.5

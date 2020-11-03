@@ -16,6 +16,7 @@
 
 package org.gradle.internal.operations.notify
 
+import org.gradle.api.internal.artifacts.configurations.ResolveConfigurationDependenciesBuildOperationType
 import org.gradle.api.internal.plugins.ApplyPluginBuildOperationType
 import org.gradle.api.internal.tasks.execution.ExecuteTaskBuildOperationType
 import org.gradle.configuration.ApplyScriptPluginBuildOperationType
@@ -291,5 +292,29 @@ class BuildOperationNotificationIntegrationTest extends AbstractIntegrationSpec 
         notifications.recordedOps.findAll { it.detailsType == ExecuteTaskBuildOperationType.Details.name }.size() == 14 // including all buildSrc task execution events
     }
 
+    def "emits TaskGraphCalculationStarted events before resolving dependencies of included build"() {
+        given:
+        file("included/build.gradle") << "plugins { id('java-library') }"
+        file("included/settings.gradle") << "rootProject.name = 'included'"
+        file("settings.gradle") << "includeBuild 'included'"
+        addSettingsListener()
+        buildScript """
+            task build {
+                dependsOn gradle.includedBuild("included").task(":compileJava")
+            }
+        """
+
+        when:
+        succeeds "build"
+
+        then:
+        def rootBuildTaskGraphOp = notifications.op(CalculateTaskGraphBuildOperationType.Details, [buildPath: ':'])
+        def includedBuildTaskGraphOp = notifications.op(CalculateTaskGraphBuildOperationType.Details, [buildPath: ':included'])
+        def includedBuildAnnotationProcessorResolveOp = notifications.op(ResolveConfigurationDependenciesBuildOperationType.Details, [buildPath: ':included', configurationName: 'annotationProcessor'])
+        def includedBuildCompileClasspathResolveOp = notifications.op(ResolveConfigurationDependenciesBuildOperationType.Details, [buildPath: ':included', configurationName: 'compileClasspath'])
+        includedBuildTaskGraphOp.started < rootBuildTaskGraphOp.finished
+        includedBuildTaskGraphOp.started < includedBuildAnnotationProcessorResolveOp.started
+        includedBuildTaskGraphOp.started < includedBuildCompileClasspathResolveOp.started
+    }
 
 }
