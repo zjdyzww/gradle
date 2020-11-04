@@ -38,17 +38,18 @@ import org.gradle.initialization.DependenciesAccessors;
 import org.gradle.internal.Cast;
 import org.gradle.internal.classpath.ClassPath;
 import org.gradle.internal.classpath.DefaultClassPath;
-import org.gradle.internal.execution.CachingResult;
 import org.gradle.internal.execution.ExecutionEngine;
+import org.gradle.internal.execution.ExecutionEngine2;
 import org.gradle.internal.execution.InputChangesContext;
 import org.gradle.internal.execution.UnitOfWork;
-import org.gradle.internal.execution.history.ExecutionHistoryStore;
 import org.gradle.internal.execution.history.changes.InputChangesInternal;
+import org.gradle.internal.execution.impl.DefaultExecutionEngine2;
 import org.gradle.internal.file.TreeType;
 import org.gradle.internal.fingerprint.CurrentFileCollectionFingerprint;
 import org.gradle.internal.fingerprint.classpath.ClasspathFingerprinter;
 import org.gradle.internal.hash.Hasher;
 import org.gradle.internal.hash.Hashing;
+import org.gradle.internal.instantiation.InstantiatorFactory;
 import org.gradle.internal.management.DependenciesModelBuilderInternal;
 import org.gradle.internal.management.DependencyResolutionManagementInternal;
 import org.gradle.internal.service.ServiceRegistry;
@@ -56,13 +57,12 @@ import org.gradle.internal.snapshot.ValueSnapshot;
 import org.gradle.util.IncubationLogger;
 
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import java.io.File;
 import java.io.StringWriter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -81,7 +81,7 @@ public class DefaultDependenciesAccessors implements DependenciesAccessors {
     private final DependenciesAccessorsWorkspace workspace;
     private final DefaultProjectDependencyFactory projectDependencyFactory;
     private final FeaturePreviews featurePreviews;
-    private final ExecutionEngine engine;
+    private final ExecutionEngine2 engine;
     private final FileCollectionFactory fileCollectionFactory;
     private final ClasspathFingerprinter fingerprinter;
     private final List<AllDependenciesModel> models = Lists.newArrayList();
@@ -98,12 +98,14 @@ public class DefaultDependenciesAccessors implements DependenciesAccessors {
                                         FeaturePreviews featurePreview,
                                         ExecutionEngine engine,
                                         FileCollectionFactory fileCollectionFactory,
-                                        ClasspathFingerprinter fingerprinter) {
+                                        ClasspathFingerprinter fingerprinter,
+                                        InstantiatorFactory instantiatorFactory,
+                                        ServiceRegistry serviceRegistry) {
         this.classPath = registry.getClassPath("DEPENDENCIES-EXTENSION-COMPILER");
         this.workspace = workspace;
         this.projectDependencyFactory = projectDependencyFactory;
         this.featurePreviews = featurePreview;
-        this.engine = engine;
+        this.engine = new DefaultExecutionEngine2(engine, instantiatorFactory, serviceRegistry);
         this.fileCollectionFactory = fileCollectionFactory;
         this.fingerprinter = fingerprinter;
     }
@@ -135,25 +137,24 @@ public class DefaultDependenciesAccessors implements DependenciesAccessors {
     }
 
     private void writeDependenciesAccessors(AllDependenciesModel model) {
-        executeWork(new DependencyAccessorUnitOfWork(model));
+        engine.prepare()
+            .workspace(workspace)
+            .workUnit(DependencyAccessorUnitOfWork.class, params -> {
+                params.getClassPath().set(classPath);
+                params.getModel().set(model);
+            }).executeNow().getExecutionResult().ifSuccessful(er -> {
+                GeneratedAccessors accessors = (GeneratedAccessors) er.getOutput();
+                ClassPath generatedClasses = DefaultClassPath.of(accessors.classesDir);
+                sources = sources.plus(DefaultClassPath.of(accessors.sourcesDir));
+                classes = classes.plus(generatedClasses);
+                classLoaderScope.export(generatedClasses);
+        });
     }
 
     private void writeProjectAccessors(ProjectRegistry<? extends ProjectDescriptor> projectRegistry) {
         if (!assertCanGenerateAccessors(projectRegistry)) {
             return;
         }
-        executeWork(new ProjectAccessorUnitOfWork(projectRegistry));
-    }
-
-    private void executeWork(UnitOfWork work) {
-        CachingResult result = engine.execute(work, null);
-        result.getExecutionResult().ifSuccessful(er -> {
-            GeneratedAccessors accessors = (GeneratedAccessors) er.getOutput();
-            ClassPath generatedClasses = DefaultClassPath.of(accessors.classesDir);
-            sources = sources.plus(DefaultClassPath.of(accessors.sourcesDir));
-            classes = classes.plus(generatedClasses);
-            classLoaderScope.export(generatedClasses);
-        });
     }
 
     private static boolean assertCanGenerateAccessors(ProjectRegistry<? extends ProjectDescriptor> projectRegistry) {
@@ -247,10 +248,17 @@ public class DefaultDependenciesAccessors implements DependenciesAccessors {
         return classes;
     }
 
-    private abstract class AbstractAccessorUnitOfWork implements UnitOfWork {
+    private static abstract class AbstractAccessorUnitOfWork implements UnitOfWork {
         private static final String OUT_SOURCES = "sources";
         private static final String OUT_CLASSES = "classes";
         public static final String DEPENDENCY_ACCESSORS_PREFIX = "dependency-accessors/";
+
+        public interface AccessorParams extends ExecutionEngine2.ConfigurableUnitOfWork.Params {
+            Property<ClassPath> getClassPath();
+        }
+
+        @Inject
+        public abstract FileCollectionFactory getFileCollectionFactory();
 
         @Override
         public Identity identify(Map<String, ValueSnapshot> identityInputs, Map<String, CurrentFileCollectionFingerprint> identityFileInputs) {
@@ -261,17 +269,9 @@ public class DefaultDependenciesAccessors implements DependenciesAccessors {
             };
         }
 
-        @Override
-        public <T> T withWorkspace(String identity, WorkspaceAction<T> action) {
-            return workspace.withWorkspace(DEPENDENCY_ACCESSORS_PREFIX + identity, (workspace, history) -> action.executeInWorkspace(workspace));
-        }
-
-        @Override
-        public Optional<ExecutionHistoryStore> getHistory() {
-            return Optional.of(workspace.getHistory());
-        }
-
         protected abstract List<ClassSource> getClassSources();
+
+        abstract AccessorParams getParams();
 
         @Override
         public WorkOutput execute(@Nullable InputChangesInternal inputChanges, InputChangesContext context) {
@@ -279,6 +279,7 @@ public class DefaultDependenciesAccessors implements DependenciesAccessors {
             File srcDir = new File(workspace, OUT_SOURCES);
             File dstDir = new File(workspace, OUT_CLASSES);
             List<ClassSource> sources = getClassSources();
+            ClassPath classPath = getParams().getClassPath().get();
             compile(srcDir, dstDir, sources, classPath);
             return new WorkOutput() {
                 @Override
@@ -309,79 +310,49 @@ public class DefaultDependenciesAccessors implements DependenciesAccessors {
         }
 
         private void visitOutputDir(OutputVisitor visitor, File dir, String propertyName) {
-            visitor.visitOutputProperty(propertyName, TreeType.DIRECTORY, dir, fileCollectionFactory.fixed(dir));
+            visitor.visitOutputProperty(propertyName, TreeType.DIRECTORY, dir, getFileCollectionFactory().fixed(dir));
         }
     }
 
-    private class DependencyAccessorUnitOfWork extends AbstractAccessorUnitOfWork {
+    public abstract static class DependencyAccessorUnitOfWork extends AbstractAccessorUnitOfWork implements ExecutionEngine2.ConfigurableUnitOfWork<DependencyAccessorUnitOfWork.DependencyAccessorParams> {
         private static final String IN_DEPENDENCY_ALIASES = "dependencyAliases";
         private static final String IN_BUNDLES = "bundles";
         private static final String IN_VERSIONS = "versions";
         private static final String IN_MODEL_NAME = "modelName";
         private static final String IN_CLASSPATH = "classpath";
 
-        private final AllDependenciesModel model;
-
-        private DependencyAccessorUnitOfWork(AllDependenciesModel model) {
-            this.model = model;
+        public interface DependencyAccessorParams extends AbstractAccessorUnitOfWork.AccessorParams {
+            Property<AllDependenciesModel> getModel();
         }
+
+        private AllDependenciesModel getModel() {
+            return getParams().getModel().get();
+        }
+
+        @Inject
+        public abstract ClasspathFingerprinter getFingerprinter();
 
         @Override
         protected List<ClassSource> getClassSources() {
+            AllDependenciesModel model = getModel();
             return Collections.singletonList(new DependenciesAccessorClassSource(model.getName(), model));
         }
 
         @Override
         public void visitInputs(InputVisitor visitor) {
+            AllDependenciesModel model = getModel();
             visitor.visitInputProperty(IN_DEPENDENCY_ALIASES, IdentityKind.IDENTITY, model::getDependencyAliases);
             visitor.visitInputProperty(IN_BUNDLES, IdentityKind.IDENTITY, model::getBundleAliases);
             visitor.visitInputProperty(IN_VERSIONS, IdentityKind.IDENTITY, model::getVersionAliases);
             visitor.visitInputProperty(IN_MODEL_NAME, IdentityKind.IDENTITY, model::getName);
-            visitor.visitInputFileProperty(IN_CLASSPATH, InputPropertyType.NON_INCREMENTAL, IdentityKind.IDENTITY, classPath, () -> fingerprinter.fingerprint(fileCollectionFactory.fixed(classPath.getAsFiles())));
+            ClassPath classPath = getParams().getClassPath().get();
+            visitor.visitInputFileProperty(IN_CLASSPATH, InputPropertyType.NON_INCREMENTAL, IdentityKind.IDENTITY, classPath, () -> getFingerprinter().fingerprint(getFileCollectionFactory().fixed(classPath.getAsFiles())));
         }
 
         @Override
         public String getDisplayName() {
-            return "generation of dependency accessors for " + model.getName();
+            return "generation of dependency accessors for " + getModel().getName();
         }
-    }
-
-    private class ProjectAccessorUnitOfWork extends AbstractAccessorUnitOfWork {
-        private final static String IN_PROJECTS = "projects";
-        private final ProjectRegistry<? extends ProjectDescriptor> projectRegistry;
-
-        public ProjectAccessorUnitOfWork(ProjectRegistry<? extends ProjectDescriptor> projectRegistry) {
-            this.projectRegistry = projectRegistry;
-        }
-
-        @Override
-        protected List<ClassSource> getClassSources() {
-            List<ClassSource> sources = Lists.newArrayList();
-            sources.add(new RootProjectAccessorSource(projectRegistry.getRootProject()));
-            for (ProjectDescriptor project : projectRegistry.getAllProjects()) {
-                sources.add(new ProjectAccessorClassSource(project));
-            }
-            return sources;
-        }
-
-        @Override
-        public void visitInputs(InputVisitor visitor) {
-            visitor.visitInputProperty(IN_PROJECTS, IdentityKind.IDENTITY, this::buildProjectTree);
-        }
-
-        private String buildProjectTree() {
-            Set<? extends ProjectDescriptor> allprojects = projectRegistry.getAllProjects();
-            return allprojects.stream()
-                .map(ProjectDescriptor::getPath)
-                .sorted()
-                .collect(Collectors.joining(","));
-        }
-
-        @Override
-        public String getDisplayName() {
-            return "generation of project accessors";
-        }
-
     }
 
     private static class GeneratedAccessors {

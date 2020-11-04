@@ -744,8 +744,10 @@ class DependencyManagementBuildScopeServices {
                                                               ExecutionEngine executionEngine,
                                                               FeaturePreviews featurePreviews,
                                                               FileCollectionFactory fileCollectionFactory,
-                                                              ClasspathFingerprinter fingerprinter) {
-        return new DefaultDependenciesAccessors(registry, workspace, factory, featurePreviews, executionEngine, fileCollectionFactory, fingerprinter);
+                                                              ClasspathFingerprinter fingerprinter,
+                                                              InstantiatorFactory instantiatorFactory,
+                                                              ServiceRegistry serviceRegistry) {
+        return new DefaultDependenciesAccessors(registry, workspace, factory, featurePreviews, executionEngine, fileCollectionFactory, fingerprinter, instantiatorFactory, serviceRegistry);
     }
 
 
