@@ -14,14 +14,22 @@
  * limitations under the License.
  */
 
-package org.gradle.integtests.tooling
+package DistributedTest.configurations
 
-import org.gradle.api.JavaVersion
-import spock.lang.Ignore
+val triggerExcludes = """
+        -:.idea
+        -:.github
+        -:.teamcity
+        -:.teamcityTest
+        -:subprojects/docs/src/docs/release
+    """.trimIndent()
 
-@Ignore
-class ToolingApiClientMinJdkCompatibilityTest extends ToolingApiClientJdkCompatibilityTest {
-    JavaVersion getClientJdkVersion() {
-        return JavaVersion.VERSION_1_8
-    }
-}
+val masterReleaseBranchFilter = """
+    +:master
+    +:release
+""".trimIndent()
+
+val allBranchesFilter = """
+    +:*
+    -:<default>
+""".trimIndent()

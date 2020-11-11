@@ -102,6 +102,9 @@ val integTestPrepare by tasks.registering(IntegrationTest::class) {
     maxParallelForks = 1
 }
 
+tasks.withType<Test>().configureEach {
+    enabled = false
+}
 tasks.withType<IntegrationTest>().configureEach {
     if (name != "integTestPrepare") {
         dependsOn(integTestPrepare)

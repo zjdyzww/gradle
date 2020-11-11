@@ -201,6 +201,7 @@ fun configureTests() {
 
     tasks.withType<Test>().configureEach {
         filterEnvironmentVariables()
+        outputs.cacheIf { false }
 
         maxParallelForks = project.maxParallelForks
 
@@ -218,6 +219,8 @@ fun configureTests() {
                 logger.lifecycle("maxParallelForks for '$path' is $maxParallelForks")
             }
         }
+
+        useJUnitPlatform()
 
         if (project.testDistributionEnabled()) {
             distribution {

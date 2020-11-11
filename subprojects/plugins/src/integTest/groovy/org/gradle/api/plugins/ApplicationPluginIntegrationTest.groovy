@@ -250,8 +250,7 @@ task execStartScript(type: Exec) {
 task execStartScript(type: Exec) {
     workingDir '$startScriptDir.canonicalPath'
     commandLine './sample'
-    environment JAVA_HOME: "$javaHome"
-    environment JAVA_OPTS: ''
+    environment JAVA_HOME: "$javaHome", JAVA_OPTS: ''
 }
 """
         return succeeds('execStartScript')

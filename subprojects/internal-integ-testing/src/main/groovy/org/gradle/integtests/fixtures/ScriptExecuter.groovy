@@ -35,7 +35,7 @@ class ScriptExecuter {
             executable = "${workingDir}/${executable}"
         }
         builder.environment("JAVA_HOME", System.getProperty("java.home"))
-        // // https://github.com/gradle/dotcom/issues/6071
+        // https://github.com/gradle/dotcom/issues/6071
         builder.environment("JAVA_OPTS", "")
         return builder.build()
     }

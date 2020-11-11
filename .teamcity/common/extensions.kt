@@ -16,7 +16,11 @@
 
 package common
 
-import Gradle_Check.configurations.allBranchesFilter
+import DistributedTest.configurations.allBranchesFilter
+import configurations.BuildDistributions
+import configurations.CompileAll
+import configurations.Gradleception
+import configurations.SanityCheck
 import configurations.m2CleanScriptUnixLike
 import configurations.m2CleanScriptWindows
 import jetbrains.buildServer.configs.kotlin.v2019_2.AbsoluteId
@@ -33,6 +37,12 @@ import jetbrains.buildServer.configs.kotlin.v2019_2.buildSteps.script
 import jetbrains.buildServer.configs.kotlin.v2019_2.failureConditions.BuildFailureOnText
 import jetbrains.buildServer.configs.kotlin.v2019_2.failureConditions.failOnText
 import jetbrains.buildServer.configs.kotlin.v2019_2.ui.add
+
+fun BuildType.isLinuxBuild() = (name.toLowerCase().contains("linux") ||
+    this is CompileAll ||
+    this is SanityCheck ||
+    this is Gradleception ||
+    this is BuildDistributions)
 
 fun BuildSteps.customGradle(init: GradleBuildStep.() -> Unit, custom: GradleBuildStep.() -> Unit): GradleBuildStep =
     GradleBuildStep(init)
@@ -69,7 +79,7 @@ fun VcsSettings.filterDefaultBranch() {
 
 const val failedTestArtifactDestination = ".teamcity/gradle-logs"
 
-fun BuildType.applyDefaultSettings(os: Os = Os.LINUX, timeout: Int = 30, vcsRoot: String = "Gradle_Branches_GradlePersonalBranches") {
+fun BuildType.applyDefaultSettings(os: Os = Os.LINUX, timeout: Int = 30, vcsRoot: String = "DistributedTest_DistributedTest") {
     artifactRules = """
         build/report-* => $failedTestArtifactDestination
         buildSrc/build/report-* => $failedTestArtifactDestination
@@ -126,8 +136,10 @@ fun buildToolGradleParameters(daemon: Boolean = true, isContinue: Boolean = true
         // We pass the 'maxParallelForks' setting as 'workers.max' to limit the maximum number of executers even
         // if multiple test tasks run in parallel. We also pass it to the Gradle build as a maximum (maxParallelForks)
         // for each test task, such that we are independent of whatever default value is defined in the build itself.
-        "-Dorg.gradle.workers.max=%maxParallelForks%",
-        "-PmaxParallelForks=%maxParallelForks%",
+        "-Dorg.gradle.workers.max=10",
+        "-PmaxParallelForks=4",
+        // Drop the VFS on before the build CI for dogfooding, until we do that automatically
+        "-Dorg.gradle.unsafe.vfs.drop=true",
         "-s",
         if (daemon) "--daemon" else "--no-daemon",
         if (isContinue) "--continue" else ""
