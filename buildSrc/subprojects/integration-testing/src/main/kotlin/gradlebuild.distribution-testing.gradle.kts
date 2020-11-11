@@ -37,7 +37,7 @@ tasks.withType<DistributionTest>().configureEach {
     addSetUpAndTearDownActions()
 }
 
-val slowTasks = listOf(
+val slowTasks = arrayOf(
     ":kotlin-dsl-tooling-builders:embeddedCrossVersionTest",
     ":dependency-management:embeddedIntegTest",
     ":build-init:embeddedIntegTest",
@@ -49,7 +49,7 @@ val slowTasks = listOf(
 
 tasks.withType<Test>().configureEach {
     if (!slowTasks.contains(path)) {
-        shouldRunAfter(*slowTasks)
+        shouldRunAfter(slowTasks)
     }
 }
 
