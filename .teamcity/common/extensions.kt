@@ -136,7 +136,7 @@ fun buildToolGradleParameters(daemon: Boolean = true, isContinue: Boolean = true
         // We pass the 'maxParallelForks' setting as 'workers.max' to limit the maximum number of executers even
         // if multiple test tasks run in parallel. We also pass it to the Gradle build as a maximum (maxParallelForks)
         // for each test task, such that we are independent of whatever default value is defined in the build itself.
-        "-Dorg.gradle.workers.max=20",
+        "-Dorg.gradle.workers.max=10",
         "-PmaxParallelForks=4",
         // Drop the VFS on before the build CI for dogfooding, until we do that automatically
         "-Dorg.gradle.unsafe.vfs.drop=true",

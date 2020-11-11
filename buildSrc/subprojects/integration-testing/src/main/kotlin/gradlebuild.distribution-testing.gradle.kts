@@ -37,6 +37,22 @@ tasks.withType<DistributionTest>().configureEach {
     addSetUpAndTearDownActions()
 }
 
+val slowTasks = listOf(
+    ":kotlin-dsl-tooling-builders:embeddedCrossVersionTest",
+    ":dependency-management:embeddedIntegTest",
+    ":build-init:embeddedIntegTest",
+    ":language-java:embeddedIntegTest",
+    ":tooling-api:embeddedCrossVersionTest",
+    ":core:embeddedIntegTest",
+    ":kotlin-dsl-plugins:embeddedIntegTest"
+)
+
+tasks.withType<Test>().configureEach {
+    if (!slowTasks.contains(path)) {
+        shouldRunAfter(*slowTasks)
+    }
+}
+
 fun executerRequiresDistribution(taskName: String) =
     !taskName.startsWith("embedded") || taskName.contains("CrossVersion") // <- Tooling API [other-version]->[current]
 
