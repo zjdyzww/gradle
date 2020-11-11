@@ -31,8 +31,7 @@ import static org.gradle.integtests.tooling.fixture.TextUtil.escapeString
 
 @TargetGradleVersion(">=6.0")
 @LeaksFileHandles("Kotlin Compiler Daemon taking time to shut down")
-class KotlinDslScriptsModelCrossVersionSpec extends AbstractKotlinScriptModelCrossVersionTest {
-
+class KotlinDslScriptsModelCrossVersionSpec1 extends AbstractKotlinDslScriptsModelCrossVersionSpec {
     def "can fetch model for the scripts of a build"() {
 
         given:
@@ -47,7 +46,11 @@ class KotlinDslScriptsModelCrossVersionSpec extends AbstractKotlinScriptModelCro
         and:
         assertModelMatchesBuildSpec(model, spec)
     }
+}
 
+@TargetGradleVersion(">=6.0")
+@LeaksFileHandles("Kotlin Compiler Daemon taking time to shut down")
+class KotlinDslScriptsModelCrossVersionSpec2 extends AbstractKotlinDslScriptsModelCrossVersionSpec {
     def "can fetch model for the scripts of a build in lenient mode"() {
 
         given:
@@ -74,6 +77,11 @@ class KotlinDslScriptsModelCrossVersionSpec extends AbstractKotlinScriptModelCro
             "Unresolved reference: script_body_compilation_error"
         )
     }
+}
+
+@TargetGradleVersion(">=6.0")
+@LeaksFileHandles("Kotlin Compiler Daemon taking time to shut down")
+class KotlinDslScriptsModelCrossVersionSpec3 extends AbstractKotlinDslScriptsModelCrossVersionSpec {
 
     def "can fetch model for a given set of scripts"() {
 
@@ -184,8 +192,10 @@ class KotlinDslScriptsModelCrossVersionSpec extends AbstractKotlinScriptModelCro
         buildFileKtsModel.editorReports.isEmpty()
         buildFileKtsModel.exceptions.isEmpty()
     }
+}
 
-    private BuildSpec withMultiProjectBuildWithBuildSrc() {
+class AbstractKotlinDslScriptsModelCrossVersionSpec extends AbstractKotlinScriptModelCrossVersionTest {
+    BuildSpec withMultiProjectBuildWithBuildSrc() {
         withBuildSrc()
         def someJar = withEmptyJar("classes_some.jar")
         def settingsJar = withEmptyJar("classes_settings.jar")
@@ -266,7 +276,7 @@ class KotlinDslScriptsModelCrossVersionSpec extends AbstractKotlinScriptModelCro
         )
     }
 
-    private static void assertModelMatchesBuildSpec(KotlinDslScriptsModel model, BuildSpec spec) {
+    static void assertModelMatchesBuildSpec(KotlinDslScriptsModel model, BuildSpec spec) {
 
         model.scriptModels.values().each { script ->
             assertContainsGradleKotlinDslJars(script.classPath)
@@ -299,7 +309,7 @@ class KotlinDslScriptsModelCrossVersionSpec extends AbstractKotlinScriptModelCro
         assertExcludes(precompiledClassPath, spec.jars.root, spec.jars.a, spec.jars.b)
     }
 
-    private static void assertModelAppliedScripts(KotlinDslScriptsModel model, BuildSpec spec) {
+    static void assertModelAppliedScripts(KotlinDslScriptsModel model, BuildSpec spec) {
         spec.appliedScripts.each { appliedScript ->
             def classPath = model.scriptModels[appliedScript.value].classPath
             assertContainsGradleKotlinDslJars(classPath)

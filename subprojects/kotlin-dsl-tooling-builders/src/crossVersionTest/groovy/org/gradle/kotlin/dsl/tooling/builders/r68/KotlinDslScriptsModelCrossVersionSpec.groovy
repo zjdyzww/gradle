@@ -28,8 +28,7 @@ import static org.gradle.integtests.tooling.fixture.TextUtil.escapeString
 
 @TargetGradleVersion(">=6.8")
 @LeaksFileHandles("Kotlin Compiler Daemon taking time to shut down")
-class KotlinDslScriptsModelCrossVersionSpec extends AbstractKotlinScriptModelCrossVersionTest {
-
+class KotlinDslScriptsModelCrossVersionSpec1 extends KotlinDslScriptsModelCrossVersionSpec {
     def "can fetch model for the init scripts of a build"() {
 
         given:
@@ -44,9 +43,12 @@ class KotlinDslScriptsModelCrossVersionSpec extends AbstractKotlinScriptModelCro
         and:
         assertModelMatchesBuildSpec(model, spec)
     }
+}
 
+@TargetGradleVersion(">=6.8")
+@LeaksFileHandles("Kotlin Compiler Daemon taking time to shut down")
+class KotlinDslScriptsModelCrossVersionSpec2 extends KotlinDslScriptsModelCrossVersionSpec {
     def "can fetch model for the init scripts of a build in lenient mode"() {
-
         given:
         def spec = withBuildSrcAndInitScripts()
 
@@ -72,6 +74,11 @@ class KotlinDslScriptsModelCrossVersionSpec extends AbstractKotlinScriptModelCro
         )
     }
 
+}
+
+@TargetGradleVersion(">=6.8")
+@LeaksFileHandles("Kotlin Compiler Daemon taking time to shut down")
+class KotlinDslScriptsModelCrossVersionSpec3 extends KotlinDslScriptsModelCrossVersionSpec {
     def "can fetch model for a given set of init scripts"() {
 
         given:
@@ -87,6 +94,11 @@ class KotlinDslScriptsModelCrossVersionSpec extends AbstractKotlinScriptModelCro
         and:
         assertModelMatchesBuildSpec(model, spec)
     }
+}
+
+@TargetGradleVersion(">=6.8")
+@LeaksFileHandles("Kotlin Compiler Daemon taking time to shut down")
+class KotlinDslScriptsModelCrossVersionSpec4 extends KotlinDslScriptsModelCrossVersionSpec {
 
     def "can fetch model for a given set of init scripts of a build in lenient mode"() {
 
@@ -115,7 +127,10 @@ class KotlinDslScriptsModelCrossVersionSpec extends AbstractKotlinScriptModelCro
             "Unresolved reference: script_body_compilation_error"
         )
     }
-
+}
+@TargetGradleVersion(">=6.8")
+@LeaksFileHandles("Kotlin Compiler Daemon taking time to shut down")
+class KotlinDslScriptsModelCrossVersionSpec5 extends KotlinDslScriptsModelCrossVersionSpec {
     def "single request models for init scripts equal multi requests models"() {
 
         given:
@@ -136,10 +151,11 @@ class KotlinDslScriptsModelCrossVersionSpec extends AbstractKotlinScriptModelCro
             assert singleRequestModels[script].implicitImports == multiRequestsModels[script].implicitImports
         }
     }
+}
 
-    private BuildSpec withBuildSrcAndInitScripts() {
+class KotlinDslScriptsModelCrossVersionSpec extends AbstractKotlinScriptModelCrossVersionTest {
+    BuildSpec withBuildSrcAndInitScripts() {
         withBuildSrc()
-
         def initJar = withEmptyJar("classes_init.jar")
         def someInitJar = withEmptyJar("classes_some_init.jar")
 
@@ -178,8 +194,7 @@ class KotlinDslScriptsModelCrossVersionSpec extends AbstractKotlinScriptModelCro
         )
     }
 
-    private static void assertModelMatchesBuildSpec(KotlinDslScriptsModel model, BuildSpec spec) {
-
+    static void assertModelMatchesBuildSpec(KotlinDslScriptsModel model, BuildSpec spec) {
         model.scriptModels.values().each { script ->
             assertContainsGradleKotlinDslJars(script.classPath)
         }

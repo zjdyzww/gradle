@@ -25,10 +25,8 @@ import org.gradle.util.GradleVersion
 import static org.hamcrest.MatcherAssert.assertThat
 
 @TargetGradleVersion(">=5.4")
-class KotlinSettingsScriptModelCrossVersionSpec extends AbstractKotlinScriptModelCrossVersionTest {
-
+class KotlinSettingsScriptModelCrossVersionSpec1 extends AbstractKotlinSettingsScriptModelCrossVersionSpec {
     def "can fetch classpath of settings script"() {
-
         given:
         withBuildSrc()
 
@@ -61,7 +59,10 @@ class KotlinSettingsScriptModelCrossVersionSpec extends AbstractKotlinScriptMode
         assertIncludes(classPath, settingsDependency)
         assertExcludes(classPath, projectDependency)
     }
+}
 
+@TargetGradleVersion(">=5.4")
+class KotlinSettingsScriptModelCrossVersionSpec2 extends AbstractKotlinSettingsScriptModelCrossVersionSpec {
     def "can fetch classpath of settings script plugin"() {
 
         given:
@@ -127,7 +128,9 @@ class KotlinSettingsScriptModelCrossVersionSpec extends AbstractKotlinScriptMode
             sourcePathFor(settings),
             matchesProjectsSourceRoots(sourceRoots))
     }
+}
 
+class AbstractKotlinSettingsScriptModelCrossVersionSpec extends AbstractKotlinScriptModelCrossVersionTest {
     void assertAppropriatelyContainsBuildSrc(List<File> classPath) {
         if (targetVersion < GradleVersion.version("6.0")) {
             assertContainsBuildSrc(classPath)
