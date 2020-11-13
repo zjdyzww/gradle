@@ -174,4 +174,8 @@ public class ExtensionsStorage {
             return extension;
         }
     }
+
+    void clear() {
+        extensions.clear();
+    }
 }

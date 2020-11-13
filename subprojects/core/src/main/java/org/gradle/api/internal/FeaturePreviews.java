@@ -30,7 +30,8 @@ public class FeaturePreviews {
         GROOVY_COMPILATION_AVOIDANCE(true),
         ONE_LOCKFILE_PER_PROJECT(true),
         VERSION_ORDERING_V2(true),
-        TYPESAFE_PROJECT_ACCESSORS(true);
+        TYPESAFE_PROJECT_ACCESSORS(true),
+        AGGRESSIVE_PROJECT_UNLOADING(true);
 
         public static Feature withName(String name) {
             try {

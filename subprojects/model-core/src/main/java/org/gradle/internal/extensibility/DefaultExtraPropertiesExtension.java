@@ -82,6 +82,10 @@ public class DefaultExtraPropertiesExtension extends GroovyObjectSupport impleme
         return new HashMap<String, Object>(storage);
     }
 
+    public void clear() {
+        storage.clear();
+    }
+
     public Object methodMissing(String name, Object args) {
         Object item = find(name);
         if (item != null && item instanceof Closure) {

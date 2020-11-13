@@ -199,6 +199,14 @@ public class DefaultConvention implements Convention, ExtensionContainerInternal
         return extensionsStorage.getAsMap();
     }
 
+    @Override
+    public void clear() {
+        extensionsStorage.clear();
+        extraProperties.clear();
+        plugins = null;
+        dynamicObjects = null;
+    }
+
     public Object propertyMissing(String name) {
         return getByName(name);
     }

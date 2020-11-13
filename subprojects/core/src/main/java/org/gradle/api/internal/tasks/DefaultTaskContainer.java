@@ -614,6 +614,10 @@ public class DefaultTaskContainer extends DefaultTaskCollection<Task> implements
         throw unsupportedTaskRemovalException();
     }
 
+    public void aggressiveCleanup() {
+        super.clear();
+    }
+
     @Override
     public boolean retainAll(Collection<?> target) {
         throw unsupportedTaskRemovalException();

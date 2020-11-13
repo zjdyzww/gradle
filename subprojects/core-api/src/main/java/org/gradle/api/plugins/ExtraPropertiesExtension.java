@@ -167,6 +167,8 @@ public interface ExtraPropertiesExtension {
      */
     Map<String, Object> getProperties();
 
+    void clear();
+
     /**
      * The exception that will be thrown when an attempt is made to read a property that is not set.
      */
