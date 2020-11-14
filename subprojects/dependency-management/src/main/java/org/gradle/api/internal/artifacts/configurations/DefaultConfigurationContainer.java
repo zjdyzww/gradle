@@ -196,4 +196,11 @@ public class DefaultConfigurationContainer extends AbstractValidatingNamedDomain
         return reply.toString();
     }
 
+    @Override
+    public void aggressiveCleanup() {
+        for (Configuration configuration : this) {
+            ((ConfigurationInternal) configuration).aggressiveCleanup();
+        }
+        clear();
+    }
 }

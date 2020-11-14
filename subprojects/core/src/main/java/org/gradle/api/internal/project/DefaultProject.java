@@ -63,6 +63,7 @@ import org.gradle.api.internal.plugins.DefaultObjectConfigurationAction;
 import org.gradle.api.internal.plugins.ExtensionContainerInternal;
 import org.gradle.api.internal.plugins.PluginManagerInternal;
 import org.gradle.api.internal.project.taskfactory.TaskInstantiator;
+import org.gradle.api.internal.tasks.DefaultTaskContainer;
 import org.gradle.api.internal.tasks.TaskContainerInternal;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
@@ -396,6 +397,17 @@ public class DefaultProject extends AbstractPluginAware implements ProjectIntern
     public ScriptHandlerInternal getBuildscript() {
         // Decoration takes care of the implementation
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void aggressiveCleanup() {
+        ((CleanableConfigurationContainer) configurationContainer).aggressiveCleanup();
+        ((DefaultTaskContainer) taskContainer).aggressiveCleanup();
+        // Can't do this yet because apparently some tasks can complete after the node
+        // in the execution graph is marked as complete
+        //ProjectScopeServices services = (ProjectScopeServices) getServices();
+        //services.close();
+        getExtensions().clear();
     }
 
     @Override

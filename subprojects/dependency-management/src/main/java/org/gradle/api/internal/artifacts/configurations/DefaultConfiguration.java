@@ -695,6 +695,26 @@ public class DefaultConfiguration extends AbstractFileCollection implements Conf
         return consistentResolutionSource;
     }
 
+    @Override
+    public void aggressiveCleanup() {
+        this.extendsFrom.clear();
+        this.dependencyConstraints.clear();
+        this.dependencies.clear();
+        inheritedDependencies = null;
+        inheritedDependencyConstraints = null;
+        allDependencies = null;
+        allDependencyConstraints = null;
+        defaultDependencyActions = null;
+        withDependencyActions = null;
+        artifacts.clear();
+        ownArtifacts.clear();
+        inheritedArtifacts = null;
+        allArtifacts = null;
+        dependencyResolutionListeners = null;
+        resolutionStrategyFactory = null;
+        resolutionStrategy = null;
+    }
+
     private void maybeConfigureConsistentResolution() {
         if (consistentResolutionSource != null) {
             assertThatConsistentResolutionIsPropertyConfigured();

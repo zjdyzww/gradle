@@ -100,4 +100,6 @@ public interface ConfigurationInternal extends ResolveContext, Configuration, De
         // A child variant. May not always be present
         void visitChildVariant(String name, DisplayName displayName, ImmutableAttributes attributes, Collection<? extends PublishArtifact> artifacts);
     }
+
+    void aggressiveCleanup();
 }

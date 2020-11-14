@@ -150,4 +150,6 @@ public interface ProjectInternal extends Project, ProjectIdentifier, HasScriptSe
 
     @Override
     ScriptHandlerInternal getBuildscript();
+
+    void aggressiveCleanup();
 }

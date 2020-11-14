@@ -31,7 +31,6 @@ import org.gradle.api.Task;
 import org.gradle.api.internal.FeaturePreviews;
 import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.internal.project.ProjectInternal;
-import org.gradle.api.internal.tasks.DefaultTaskContainer;
 import org.gradle.api.specs.Spec;
 import org.gradle.api.specs.Specs;
 import org.gradle.internal.Pair;
@@ -41,7 +40,6 @@ import org.gradle.internal.lazy.Lazy;
 import org.gradle.internal.logging.text.StyledTextOutput;
 import org.gradle.internal.resources.ResourceLock;
 import org.gradle.internal.resources.ResourceLockState;
-import org.gradle.internal.service.scopes.ProjectScopeServices;
 import org.gradle.internal.work.WorkerLeaseRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -776,6 +774,7 @@ public class DefaultExecutionPlan implements ExecutionPlan {
         }
 
         updateAllDependenciesCompleteForPredecessors(node);
+        performCleanup(node);
     }
 
     @Override
@@ -797,7 +796,6 @@ public class DefaultExecutionPlan implements ExecutionPlan {
                 LOGGER.debug("Already completed node {} reported as finished executing", node);
             }
         } finally {
-            performCleanup(node);
             unlockProjectFor(node);
             unlockSharedResourcesFor(node);
         }
@@ -814,11 +812,7 @@ public class DefaultExecutionPlan implements ExecutionPlan {
         if (dependentProjects.noneMatch(n -> n == owningProject)) {
             LOGGER.debug("Cleanup project {}", owningProject);
             try {
-                owningProject.getConfigurations().clear();
-                ((DefaultTaskContainer) owningProject.getTasks()).aggressiveCleanup();
-                ProjectScopeServices services = (ProjectScopeServices) owningProject.getServices();
-                services.close();
-                owningProject.getExtensions().clear();
+                owningProject.aggressiveCleanup();
             } catch (Exception ex) {
                 LOGGER.debug("Error while clearing project state of {}", owningProject);
             }
