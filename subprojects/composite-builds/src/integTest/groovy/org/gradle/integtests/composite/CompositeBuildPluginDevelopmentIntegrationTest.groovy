@@ -19,6 +19,7 @@ package org.gradle.integtests.composite
 
 import org.gradle.integtests.fixtures.ToBeFixedForConfigurationCache
 import org.gradle.integtests.fixtures.build.BuildTestFile
+import org.gradle.test.fixtures.file.TestFile
 import spock.lang.Issue
 import spock.lang.Unroll
 /**
@@ -297,6 +298,45 @@ class CompositeBuildPluginDevelopmentIntegrationTest extends AbstractCompositeBu
         then:
         executed ":pluginDependencyA:jar", ":taskFromPluginBuild"
         notExecuted ":pluginBuild:jar"
+    }
+
+    @Unroll
+    def "can develop a plugin dependency as multi-project included build with #configOnDemand"() {
+        given:
+        pluginBuild.settingsFile << """
+include 'lib'
+"""
+        pluginBuild.file('lib/build.gradle') << """
+plugins {
+    id 'java-library'
+}
+"""
+        pluginBuild.buildFile << """
+            dependencies {
+                implementation project(':lib')
+            }
+"""
+
+        includeBuild pluginBuild
+        buildA.settingsFile << """
+include ':app'
+"""
+
+        buildA.file('app/build.gradle') << """
+plugins {
+    id 'org.test.plugin.pluginBuild'
+    id 'java'
+}
+"""
+
+        when:
+        execute(buildA, ":app:compileJava", [configOnDemand])
+
+        then:
+        executed ":pluginBuild:lib:jar", ":pluginBuild:jar", ":app:compileJava"
+
+        where:
+        configOnDemand << ['--no-configure-on-demand', '--configure-on-demand']
     }
 
     private void publishPluginWithDependency() {
