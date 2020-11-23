@@ -1,0 +1,55 @@
+// Copyright 2020 the original author or authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+[[cheatsheet]]
+= Gradle Cheat Sheet
+
+
+== Access system properties and environment variables
+
+====
+include::sample[dir="snippets/tutorial/properties/groovy",files="gradle.properties[]"]
+====
+
+====
+include::sample[dir="snippets/tutorial/properties/groovy",files="build.gradle[]"]
+include::sample[dir="snippets/tutorial/properties/kotlin",files="build.gradle.kts[]"]
+====
+
+== Define tasks
+
+====
+include::sample[dir="snippets/tasks/defineUsingStringTaskNames/groovy",files="build.gradle[]"]
+include::sample[dir="snippets/tasks/defineUsingStringTaskNames/kotlin",files="build.gradle.kts[]"]
+====
+
+See <<more_about_tasks#sec:defining_tasks,defining tasks>> for more information.
+
+== Define Java version to run the build
+
+====
+include::sample[dir="samples/java/jvm-multi-project-with-toolchains/groovy/",files="buildSrc/src/main/groovy/myproject.java-conventions.gradle[tags=toolchain]"]
+include::sample[dir="samples/java/jvm-multi-project-with-toolchains/kotlin/",files="buildSrc/src/main/kotlin/myproject.java-conventions.gradle.kts[tags=toolchain]"]
+====
+
+See <<toolchains,Java toolchains>> for more information.
+
+== Copy an entire directory
+
+====
+include::sample[dir="snippets/files/copy/groovy",files="build.gradle[tags=copy-directory-example]"]
+include::sample[dir="snippets/files/copy/kotlin",files="build.gradle.kts[tags=copy-directory-example]"]
+====
+
+See <<working_with_files,Working with Files>> for more information.
