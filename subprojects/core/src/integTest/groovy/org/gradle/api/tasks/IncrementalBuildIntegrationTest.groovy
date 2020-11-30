@@ -1394,7 +1394,7 @@ task generate(type: TransformerTask) {
         inputFile.text = "original"
 
         executer.beforeExecute {
-            executer.expectDocumentedDeprecationWarning("Property 'classpath' annotated with @Internal should not be also annotated with @InputFiles, @Classpath. " +
+            executer.expectDocumentedDeprecationWarning("Property 'classpath' annotated with @Internal should not be also annotated with @Classpath, @InputFiles. " +
                 "This behaviour has been deprecated and is scheduled to be removed in Gradle 7.0. " +
                 "See https://docs.gradle.org/current/userguide/more_about_tasks.html#sec:up_to_date_checks for more details.")
         }

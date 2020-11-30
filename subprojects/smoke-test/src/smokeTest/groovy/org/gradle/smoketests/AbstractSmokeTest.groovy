@@ -69,7 +69,7 @@ abstract class AbstractSmokeTest extends Specification {
         static nebulaLint = "16.15.9"
 
         // https://plugins.gradle.org/plugin/nebula.dependency-lock
-        static nebulaDependencyLock = Versions.of("8.8.0", "9.4.1", "10.1.0", "11.1.0")
+        static nebulaDependencyLock = Versions.of("11.1.1")
 
         // https://plugins.gradle.org/plugin/nebula.resolution-rules
         static nebulaResolutionRules = "7.8.0"
