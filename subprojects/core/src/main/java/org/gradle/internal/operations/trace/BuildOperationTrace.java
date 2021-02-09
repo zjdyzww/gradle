@@ -41,6 +41,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -84,6 +85,9 @@ public class BuildOperationTrace implements Stoppable {
 
     public static final String SYSPROP = "org.gradle.internal.operations.trace";
 
+    // Append a timestamp to the filename if set to "true"
+    public static final String TIMESTAMP_SYSPROP = "org.gradle.internal.operations.trace.timestamp";
+
     private static final byte[] NEWLINE = "\n".getBytes();
 
     private final String basePath;
@@ -111,20 +115,16 @@ public class BuildOperationTrace implements Stoppable {
     public BuildOperationTrace(StartParameter startParameter, BuildOperationListenerManager buildOperationListenerManager) {
         this.buildOperationListenerManager = buildOperationListenerManager;
 
-        Map<String, String> sysProps = startParameter.getSystemPropertiesArgs();
-        String basePath = sysProps.get(SYSPROP);
-        if (basePath == null) {
-            basePath = System.getProperty(SYSPROP);
-        }
+        Map<String, String> sysPropArgs = startParameter.getSystemPropertiesArgs();
 
-        this.basePath = basePath;
+        this.basePath = calculateBasePath(sysPropArgs);
         if (this.basePath == null || basePath.equals(Boolean.FALSE.toString())) {
             this.logOutputStream = null;
             return;
         }
 
         try {
-            File logFile = logFile(basePath);
+            File logFile = logFile(this.basePath);
             GFileUtils.mkdirs(logFile.getParentFile());
             if (logFile.isFile()) {
                 GFileUtils.forceDelete(logFile);
@@ -138,6 +138,26 @@ public class BuildOperationTrace implements Stoppable {
         }
 
         buildOperationListenerManager.addListener(listener);
+    }
+
+    private String getSysProp(Map<String, String> sysProps, String sysPropArgs) {
+        String value = sysProps.get(sysPropArgs);
+        if (value == null) {
+            return System.getProperty(sysPropArgs);
+        } else {
+            return value;
+        }
+    }
+
+    private String calculateBasePath(Map<String, String> sysPropArgs) {
+        String basePath = getSysProp(sysPropArgs, SYSPROP);
+        if (basePath == null) {
+            return null;
+        } else if (Boolean.parseBoolean(getSysProp(sysPropArgs, TIMESTAMP_SYSPROP))) {
+            return basePath + "-" + System.currentTimeMillis();
+        } else {
+            return basePath;
+        }
     }
 
     @Override
