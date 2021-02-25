@@ -4,6 +4,7 @@ import common.Os.LINUX
 import common.applyDefaultSettings
 import common.buildToolGradleParameters
 import common.gradleWrapper
+import common.isLinuxBuild
 import jetbrains.buildServer.configs.kotlin.v2019_2.BuildStep
 import jetbrains.buildServer.configs.kotlin.v2019_2.BuildType
 import jetbrains.buildServer.configs.kotlin.v2019_2.Dependencies

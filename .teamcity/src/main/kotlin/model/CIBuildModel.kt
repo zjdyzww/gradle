@@ -259,7 +259,7 @@ data class TestCoverage(
     val buildJvmVersion: JvmVersion = JvmVersion.java11,
     val expectedBucketNumber: Int = 50,
     val withoutDependencies: Boolean = false,
-    val testDistribution: Boolean = false
+    val testDistribution: Boolean = true
 ) {
 
     constructor(

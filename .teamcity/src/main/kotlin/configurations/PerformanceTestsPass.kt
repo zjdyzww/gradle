@@ -69,11 +69,11 @@ subprojects/$performanceProjectName/build/performance-test-results.zip
     }
 
     dependencies {
-        snapshotDependencies(performanceTestProject.performanceTests) {
-            if (type == PerformanceTestType.flakinessDetection) {
-                reuseBuilds = ReuseBuilds.NO
-            }
-        }
+//        snapshotDependencies(performanceTestProject.performanceTests) {
+//            if (type == PerformanceTestType.flakinessDetection) {
+//                reuseBuilds = ReuseBuilds.NO
+//            }
+//        }
         performanceTestProject.performanceTests.forEachIndexed { index, performanceTest ->
             if (performanceTest.testProjects.isNotEmpty()) {
                 artifacts(performanceTest.id!!) {

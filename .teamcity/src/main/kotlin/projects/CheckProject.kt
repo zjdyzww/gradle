@@ -4,14 +4,12 @@ import common.failedTestArtifactDestination
 import configurations.StagePasses
 import jetbrains.buildServer.configs.kotlin.v2019_2.Project
 import model.CIBuildModel
-import model.FunctionalTestBucketProvider
 import model.Stage
 import model.StatisticsBasedPerformanceTestBucketProvider
 import java.io.File
 
 class CheckProject(
-    model: CIBuildModel,
-    functionalTestBucketProvider: FunctionalTestBucketProvider
+    model: CIBuildModel
 ) : Project({
     id("Check")
     name = "Check"
@@ -28,7 +26,7 @@ class CheckProject(
 
     var prevStage: Stage? = null
     model.stages.forEach { stage ->
-        val stageProject = StageProject(model, functionalTestBucketProvider, performanceTestBucketProvider, stage)
+        val stageProject = StageProject(model, performanceTestBucketProvider, stage)
         val stagePasses = StagePasses(model, stage, prevStage, stageProject)
         buildType(stagePasses)
         subProject(stageProject)

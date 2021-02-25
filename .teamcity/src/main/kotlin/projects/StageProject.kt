@@ -50,13 +50,13 @@ class StageProject(model: CIBuildModel, performanceTestBucketProvider: Performan
         }
         specificBuildTypes.forEach(this::buildType)
 
-        performanceTests = stage.performanceTests.map { createPerformanceTests(model, performanceTestBucketProvider, stage, it) } +
-            stage.flameGraphs.map { createFlameGraphs(model, stage, it) }
+        performanceTests = emptyList()
+//        stage.performanceTests.map { createPerformanceTests(model, performanceTestBucketProvider, stage, it) } +
+//            stage.flameGraphs.map { createFlameGraphs(model, stage, it) }
 
         val (topLevelCoverage, allCoverage) = stage.functionalTests.partition { it.testType == TestType.soak || it.testDistribution }
         val topLevelFunctionalTests = topLevelCoverage
             .map { FunctionalTest(model, it.asConfigurationId(model), it.asName(), it.asName(), it, stage = stage) }
-        topLevelFunctionalTests.forEach(this::buildType)
 
         val coverageFunctionalTests = allCoverage
             .map { testCoverage ->
