@@ -22,7 +22,8 @@ class FunctionalTest(
     this.name = name
     this.description = description
     this.id(id)
-    val testTasks = getTestTaskName(testCoverage, subprojects)
+    val testTaskName = "${testCoverage.testType.name}Test -x distributions-integ-tests:quickTest"
+    val quickTest = testCoverage.testType == TestType.quick
     val buildScanTags = listOf("FunctionalTest")
     val buildScanValues = mapOf(
         "coverageOs" to testCoverage.os.name.toLowerCase(),
@@ -38,26 +39,21 @@ class FunctionalTest(
         }
     }
 
-    val enableTestDistribution = testCoverage.testDistribution
-
-    applyTestDefaults(model, this, testTasks, notQuick = !testCoverage.isQuick, os = testCoverage.os,
+    applyTestDefaults(model, this, testTaskName, notQuick = !quickTest, os = testCoverage.os,
         extraParameters = (
             listOf(
                 "-PtestJavaVersion=${testCoverage.testJvmVersion.major}",
                 "-PtestJavaVendor=${testCoverage.vendor.name}") +
                 buildScanTags.map { buildScanTag(it) } +
                 buildScanValues.map { buildScanCustomValue(it.key, it.value) } +
-                if (enableExperimentalTestDistribution(testCoverage, subprojects)) "-DenableTestDistribution=%enableTestDistribution%" else "" +
-                    extraParameters
+                extraParameters
             ).filter { it.isNotBlank() }.joinToString(separator = " "),
         timeout = testCoverage.testType.timeout,
         extraSteps = extraBuildSteps,
         preSteps = preBuildSteps)
 
     params {
-        if (enableTestDistribution) {
-            param("env.GRADLE_ENTERPRISE_ACCESS_KEY", "%e.grdev.net.access.key%")
-        }
+        param("env.GRADLE_ENTERPRISE_ACCESS_KEY", "%e.grdev.net.access.key%")
 
         param("env.JAVA_HOME", "%${testCoverage.os.name.toLowerCase()}.${testCoverage.buildJvmVersion}.openjdk.64bit%")
         param("env.ANDROID_HOME", testCoverage.os.androidHome)
@@ -71,29 +67,4 @@ class FunctionalTest(
             param("maxParallelForks", "16")
         }
     }
-
-    if (testCoverage.testType == TestType.soak || testTasks.contains("plugins:")) {
-        failureConditions {
-            // JavaExecDebugIntegrationTest.debug session fails without debugger might cause JVM crash
-            // Some soak tests produce OOM exceptions
-            javaCrash = false
-        }
-    }
 })
-
-fun enableExperimentalTestDistribution(testCoverage: TestCoverage, subprojects: List<String>) = testCoverage.os == Os.LINUX && (subprojects == listOf("core") || subprojects == listOf("dependency-management"))
-
-fun getTestTaskName(testCoverage: TestCoverage, subprojects: List<String>): String {
-    val testTaskName = "${testCoverage.testType.name}Test"
-    return when {
-        testCoverage.testDistribution -> {
-            return testTaskName
-        }
-        subprojects.isEmpty() -> {
-            testTaskName
-        }
-        else -> {
-            subprojects.joinToString(" ") { "$it:$testTaskName" }
-        }
-    }
-}

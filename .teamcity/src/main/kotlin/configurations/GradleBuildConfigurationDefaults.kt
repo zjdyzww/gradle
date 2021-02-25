@@ -41,34 +41,34 @@ val m2CleanScriptWindows = """
 """.trimIndent()
 
 fun BuildFeatures.publishBuildStatusToGithub(model: CIBuildModel) {
-    if (model.publishStatusToGitHub) {
-        publishBuildStatusToGithub()
-    }
+//    if (model.publishStatusToGitHub) {
+//        publishBuildStatusToGithub()
+//    }
 }
 
 fun BuildFeatures.triggeredOnPullRequests() {
-    pullRequests {
-        vcsRootExtId = "GradleMaster"
-        provider = github {
-            authType = token {
-                token = "%github.bot-gradle.token%"
-            }
-            filterAuthorRole = PullRequests.GitHubRoleFilter.MEMBER
-            filterTargetBranch = branchesFilterExcluding()
-        }
-    }
+//    pullRequests {
+//        vcsRootExtId = "GradleMaster"
+//        provider = github {
+//            authType = token {
+//                token = "%github.bot-gradle.token%"
+//            }
+//            filterAuthorRole = PullRequests.GitHubRoleFilter.MEMBER
+//            filterTargetBranch = branchesFilterExcluding()
+//        }
+//    }
 }
 
 fun BuildFeatures.publishBuildStatusToGithub() {
-    commitStatusPublisher {
-        vcsRootExtId = "Gradle_Branches_GradlePersonalBranches"
-        publisher = github {
-            githubUrl = "https://api.github.com"
-            authType = personalToken {
-                token = "%github.bot-gradle.token%"
-            }
-        }
-    }
+//    commitStatusPublisher {
+//        vcsRootExtId = "Gradle_Branches_GradlePersonalBranches"
+//        publisher = github {
+//            githubUrl = "https://api.github.com"
+//            authType = personalToken {
+//                token = "%github.bot-gradle.token%"
+//            }
+//        }
+//    }
 }
 
 fun ProjectFeatures.buildReportTab(title: String, startPage: String) {

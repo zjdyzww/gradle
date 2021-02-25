@@ -1,8 +1,8 @@
 package projects
 
 import common.failedTestArtifactDestination
+import common.isLinuxBuild
 import configurations.FunctionalTest
-import configurations.FunctionalTestsPass
 import configurations.PartialTrigger
 import configurations.PerformanceTest
 import configurations.PerformanceTestsPass
@@ -16,7 +16,6 @@ import jetbrains.buildServer.configs.kotlin.v2019_2.Project
 import jetbrains.buildServer.configs.kotlin.v2019_2.RelativeId
 import model.CIBuildModel
 import model.FlameGraphGeneration
-import model.FunctionalTestBucketProvider
 import model.PerformanceTestBucketProvider
 import model.PerformanceTestCoverage
 import model.SpecificBuild
@@ -24,7 +23,7 @@ import model.Stage
 import model.StageNames
 import model.TestType
 
-class StageProject(model: CIBuildModel, functionalTestBucketProvider: FunctionalTestBucketProvider, performanceTestBucketProvider: PerformanceTestBucketProvider, stage: Stage) : Project({
+class StageProject(model: CIBuildModel, performanceTestBucketProvider: PerformanceTestBucketProvider, stage: Stage) : Project({
     this.id("${model.projectId}_Stage_${stage.stageName.id}")
     this.name = stage.stageName.stageName
     this.description = stage.stageName.description
@@ -59,28 +58,30 @@ class StageProject(model: CIBuildModel, functionalTestBucketProvider: Functional
             .map { FunctionalTest(model, it.asConfigurationId(model), it.asName(), it.asName(), it, stage = stage) }
         topLevelFunctionalTests.forEach(this::buildType)
 
-        val functionalTestProjects = allCoverage
+        val coverageFunctionalTests = allCoverage
             .map { testCoverage ->
-                val functionalTestProject = FunctionalTestProject(model, functionalTestBucketProvider, testCoverage, stage)
+                val coverageFunctionalTest = FunctionalTest(
+                    model,
+                    testCoverage.asId(model),
+                    testCoverage.asName(),
+                    testCoverage.asName(),
+                    testCoverage,
+                    stage)
+
                 if (stage.functionalTestsDependOnSpecificBuilds) {
-                    specificBuildTypes.forEach { specificBuildType ->
-                        functionalTestProject.addDependencyForAllBuildTypes(specificBuildType)
-                    }
+                    specificBuildTypes.forEach(coverageFunctionalTest::dependsOn)
                 }
                 if (!(stage.functionalTestsDependOnSpecificBuilds && stage.specificBuilds.contains(SpecificBuild.SanityCheck)) && stage.dependsOnSanityCheck) {
-                    functionalTestProject.addDependencyForAllBuildTypes(RelativeId(SanityCheck.buildTypeId(model)))
+                    coverageFunctionalTest.dependsOn(RelativeId(SanityCheck.buildTypeId(model)))
                 }
-                functionalTestProject
+                coverageFunctionalTest
             }
 
-        functionalTestProjects.forEach { functionalTestProject ->
-            this@StageProject.subProject(functionalTestProject)
-            this@StageProject.buildType(FunctionalTestsPass(model, functionalTestProject))
-        }
+        functionalTests = topLevelFunctionalTests + coverageFunctionalTests
+        functionalTests.forEach(this::buildType)
 
-        functionalTests = topLevelFunctionalTests + functionalTestProjects.flatMap(FunctionalTestProject::functionalTests)
         if (stage.stageName !in listOf(StageNames.QUICK_FEEDBACK_LINUX_ONLY, StageNames.QUICK_FEEDBACK)) {
-            if (topLevelFunctionalTests.size + functionalTestProjects.size > 1) {
+            if (topLevelFunctionalTests.size + functionalTests.size > 1) {
                 buildType(PartialTrigger("All Functional Tests for ${stage.stageName.stageName}", "Stage_${stage.stageName.id}_FuncTests", model, functionalTests))
             }
             val smokeTests = specificBuildTypes.filterIsInstance<SmokeTests>()
@@ -132,9 +133,9 @@ class StageProject(model: CIBuildModel, functionalTestBucketProvider: Functional
     }
 }
 
-private fun FunctionalTestProject.addDependencyForAllBuildTypes(dependency: IdOwner) =
-    functionalTests.forEach { functionalTestBuildType ->
-        functionalTestBuildType.dependencies {
+private fun FunctionalTest.dependsOn(dependency: IdOwner) {
+    if (this.isLinuxBuild()) {
+        dependencies {
             dependency(dependency) {
                 snapshot {
                     onDependencyFailure = FailureAction.CANCEL
@@ -143,3 +144,4 @@ private fun FunctionalTestProject.addDependencyForAllBuildTypes(dependency: IdOw
             }
         }
     }
+}

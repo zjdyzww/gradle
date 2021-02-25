@@ -16,6 +16,10 @@
 
 package common
 
+import configurations.BuildDistributions
+import configurations.CompileAll
+import configurations.Gradleception
+import configurations.SanityCheck
 import configurations.branchesFilterExcluding
 import configurations.m2CleanScriptUnixLike
 import configurations.m2CleanScriptWindows
@@ -34,6 +38,12 @@ import jetbrains.buildServer.configs.kotlin.v2019_2.buildSteps.script
 import jetbrains.buildServer.configs.kotlin.v2019_2.failureConditions.BuildFailureOnText
 import jetbrains.buildServer.configs.kotlin.v2019_2.failureConditions.failOnText
 import jetbrains.buildServer.configs.kotlin.v2019_2.ui.add
+
+fun BuildType.isLinuxBuild() = (name.toLowerCase().contains("linux") ||
+    this is CompileAll ||
+    this is SanityCheck ||
+    this is Gradleception ||
+    this is BuildDistributions)
 
 fun BuildSteps.customGradle(init: GradleBuildStep.() -> Unit, custom: GradleBuildStep.() -> Unit): GradleBuildStep =
     GradleBuildStep(init)
