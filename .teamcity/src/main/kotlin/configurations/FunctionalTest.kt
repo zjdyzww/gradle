@@ -46,6 +46,7 @@ class FunctionalTest(
                 "-PtestJavaVendor=${testCoverage.vendor.name}") +
                 buildScanTags.map { buildScanTag(it) } +
                 buildScanValues.map { buildScanCustomValue(it.key, it.value) } +
+                "-DenableTestDistribution=true" +
                 extraParameters
             ).filter { it.isNotBlank() }.joinToString(separator = " "),
         timeout = testCoverage.testType.timeout,
