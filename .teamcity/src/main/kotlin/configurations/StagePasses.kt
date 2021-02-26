@@ -33,33 +33,33 @@ class StagePasses(model: CIBuildModel, stage: Stage, prevStage: Stage?, stagePro
     features {
         publishBuildStatusToGithub(model)
     }
-
-    if (stage.trigger == Trigger.eachCommit) {
-        triggers.vcs {
-            quietPeriodMode = VcsTrigger.QuietPeriodMode.USE_CUSTOM
-            quietPeriod = 90
-            triggerRules = triggerExcludes
-            branchFilter = branchFilter(model.branch)
-        }
-    } else if (stage.trigger != Trigger.never) {
-        triggers.schedule {
-            if (stage.trigger == Trigger.weekly) {
-                schedulingPolicy = weekly {
-                    dayOfWeek = ScheduleTrigger.DAY.Saturday
-                    hour = 1
-                }
-            } else {
-                schedulingPolicy = daily {
-                    hour = 0
-                    minute = 30
-                }
-            }
-            triggerBuild = always()
-            withPendingChangesOnly = true
-            param("revisionRule", "lastFinished")
-            branchFilter = branchFilter(model.branch)
-        }
-    }
+//
+//    if (stage.trigger == Trigger.eachCommit) {
+//        triggers.vcs {
+//            quietPeriodMode = VcsTrigger.QuietPeriodMode.USE_CUSTOM
+//            quietPeriod = 90
+//            triggerRules = triggerExcludes
+//            branchFilter = branchFilter(model.branch)
+//        }
+//    } else if (stage.trigger != Trigger.never) {
+//        triggers.schedule {
+//            if (stage.trigger == Trigger.weekly) {
+//                schedulingPolicy = weekly {
+//                    dayOfWeek = ScheduleTrigger.DAY.Saturday
+//                    hour = 1
+//                }
+//            } else {
+//                schedulingPolicy = daily {
+//                    hour = 0
+//                    minute = 30
+//                }
+//            }
+//            triggerBuild = always()
+//            withPendingChangesOnly = true
+//            param("revisionRule", "lastFinished")
+//            branchFilter = branchFilter(model.branch)
+//        }
+//    }
 
     params {
         param("env.JAVA_HOME", LINUX.javaHomeForGradle())

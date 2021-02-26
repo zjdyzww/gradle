@@ -56,7 +56,7 @@ class FunctionalTest(
     )
 
     params {
-        param("env.GRADLE_ENTERPRISE_ACCESS_KEY", "%e.grdev.net.access.key%")
+        param("env.GRADLE_ENTERPRISE_ACCESS_KEY", "%ge.gradle.org.access.key%")
 
         param("env.JAVA_HOME", "%${testCoverage.os.name.toLowerCase()}.${testCoverage.buildJvmVersion}.openjdk.64bit%")
         param("env.ANDROID_HOME", testCoverage.os.androidHome)
