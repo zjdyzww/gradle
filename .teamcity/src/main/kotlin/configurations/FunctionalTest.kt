@@ -43,7 +43,8 @@ class FunctionalTest(
         extraParameters = (
             listOf(
                 "-PtestJavaVersion=${testCoverage.testJvmVersion.major}",
-                "-PtestJavaVendor=${testCoverage.vendor.name}") +
+                "-PtestJavaVendor=${testCoverage.vendor.name}"
+            ) +
                 buildScanTags.map { buildScanTag(it) } +
                 buildScanValues.map { buildScanCustomValue(it.key, it.value) } +
                 "-DenableTestDistribution=true" +
@@ -51,7 +52,8 @@ class FunctionalTest(
             ).filter { it.isNotBlank() }.joinToString(separator = " "),
         timeout = testCoverage.testType.timeout,
         extraSteps = extraBuildSteps,
-        preSteps = preBuildSteps)
+        preSteps = preBuildSteps
+    )
 
     params {
         param("env.GRADLE_ENTERPRISE_ACCESS_KEY", "%e.grdev.net.access.key%")
@@ -62,10 +64,9 @@ class FunctionalTest(
         if (testCoverage.os == Os.MACOS) {
             // Use fewer parallel forks on macOs, since the agents are not very powerful.
             param("maxParallelForks", "2")
-        }
-
-        if (testCoverage.testDistribution) {
+        } else {
             param("maxParallelForks", "16")
         }
+
     }
 })
