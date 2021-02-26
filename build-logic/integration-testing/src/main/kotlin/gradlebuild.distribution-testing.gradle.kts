@@ -35,8 +35,6 @@ val cachesCleanerService = gradle.sharedServices.registerIfAbsent("cachesCleaner
 fun Gradle.rootBuild(): Gradle = parent.let { it?.rootBuild() ?: this }
 
 tasks.withType<DistributionTest>().configureEach {
-    shouldRunAfter("test")
-
     setJvmArgsOfTestJvm()
     setSystemPropertiesOfTestJVM()
     configureGradleTestEnvironment()
