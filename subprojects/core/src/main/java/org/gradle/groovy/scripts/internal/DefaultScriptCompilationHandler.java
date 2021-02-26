@@ -111,6 +111,8 @@ public class DefaultScriptCompilationHandler implements ScriptCompilationHandler
         final Transformer transformer = extractingTransformer != null ? extractingTransformer.getTransformer() : null;
         logger.info("Compiling {} using {}.", source.getDisplayName(), transformer != null ? transformer.getClass().getSimpleName() : "no transformer");
 
+        System.setProperty("groovy.parallel.parse", "true");
+        System.setProperty("groovy.antlr4.cache.threshold", "0");
         final EmptyScriptDetector emptyScriptDetector = new EmptyScriptDetector();
         final PackageStatementDetector packageDetector = new PackageStatementDetector();
         GroovyClassLoader groovyClassLoader = new GroovyClassLoader(classLoader, configuration, false) {

@@ -37,6 +37,8 @@ public class BuildScriptProcessor implements ProjectConfigureAction {
             LOGGER.info("Evaluating {} using {}.", project, project.getBuildScriptSource().getDisplayName());
         }
         final Timer clock = Time.startTimer();
+        System.setProperty("groovy.parallel.parse", "true");
+        System.setProperty("groovy.antlr4.cache.threshold", "0");
         try {
             final ScriptPlugin configurer = configurerFactory.create(project.getBuildScriptSource(), project.getBuildscript(), project.getClassLoaderScope(), project.getBaseClassLoaderScope(), true);
             project.getMutationState().applyToMutableState(configurer::apply);
