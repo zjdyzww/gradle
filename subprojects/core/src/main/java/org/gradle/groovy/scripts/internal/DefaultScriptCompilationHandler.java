@@ -20,6 +20,7 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyCodeSource;
 import groovy.lang.GroovyResourceLoader;
 import groovy.lang.Script;
+import org.apache.groovy.parser.antlr4.internal.atnmanager.AtnManager;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilationFailedException;
@@ -63,6 +64,7 @@ import java.net.URL;
 import java.security.CodeSource;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 @SuppressWarnings("deprecation")
 public class DefaultScriptCompilationHandler implements ScriptCompilationHandler {
@@ -106,31 +108,32 @@ public class DefaultScriptCompilationHandler implements ScriptCompilationHandler
         logger.debug("Timing: Writing script to cache at {} took: {}", classesDir.getAbsolutePath(), clock.getElapsed());
     }
 
+    static GroovyClassLoader sharedLoader = null;
     private void compileScript(ScriptSource source, ClassLoader classLoader, CompilerConfiguration configuration, File metadataDir,
                                final CompileOperation<?> extractingTransformer, final Action<? super ClassNode> customVerifier) {
         final Transformer transformer = extractingTransformer != null ? extractingTransformer.getTransformer() : null;
         logger.info("Compiling {} using {}.", source.getDisplayName(), transformer != null ? transformer.getClass().getSimpleName() : "no transformer");
 
-        System.setProperty("groovy.parallel.parse", "true");
-        System.setProperty("groovy.antlr4.cache.threshold", "0");
+        try {
+            final Field field = AtnManager.class.getDeclaredField("DFA_CACHE_THRESHOLD");
+            field.setAccessible(true);
+            final Long dfaValue = (long) field.get(null);
+            if(dfaValue < 1000) {
+                throw new IllegalStateException("dfa value not expected: " + dfaValue);
+            }
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+
         final EmptyScriptDetector emptyScriptDetector = new EmptyScriptDetector();
         final PackageStatementDetector packageDetector = new PackageStatementDetector();
-        GroovyClassLoader groovyClassLoader = new GroovyClassLoader(classLoader, configuration, false) {
-            @Override
-            protected CompilationUnit createCompilationUnit(CompilerConfiguration compilerConfiguration,
-                                                            CodeSource codeSource) {
-
-                CompilationUnit compilationUnit = new CustomCompilationUnit(compilerConfiguration, codeSource, customVerifier, this, simpleNameToFQN);
-
-                if (transformer != null) {
-                    transformer.register(compilationUnit);
-                }
-
-                compilationUnit.addPhaseOperation(packageDetector, Phases.CANONICALIZATION);
-                compilationUnit.addPhaseOperation(emptyScriptDetector, Phases.CANONICALIZATION);
-                return compilationUnit;
-            }
-        };
+//        if(sharedLoader == null) {
+//            sharedLoader = createLoader(classLoader, configuration, customVerifier, transformer, emptyScriptDetector, packageDetector);
+//        }
+//        GroovyClassLoader groovyClassLoader = sharedLoader;
+        GroovyClassLoader groovyClassLoader = createLoader(classLoader, configuration, customVerifier, transformer, emptyScriptDetector, packageDetector);
 
         groovyClassLoader.setResourceLoader(NO_OP_GROOVY_RESOURCE_LOADER);
         String scriptText = source.getResource().getText();
@@ -152,6 +155,26 @@ public class DefaultScriptCompilationHandler implements ScriptCompilationHandler
         } finally {
             ClassLoaderUtils.tryClose(groovyClassLoader);
         }
+    }
+
+    @org.jetbrains.annotations.NotNull
+    private GroovyClassLoader createLoader(ClassLoader classLoader, CompilerConfiguration configuration, Action<? super ClassNode> customVerifier, Transformer transformer, EmptyScriptDetector emptyScriptDetector, PackageStatementDetector packageDetector) {
+        return new GroovyClassLoader(classLoader, configuration, false) {
+            @Override
+            protected CompilationUnit createCompilationUnit(CompilerConfiguration compilerConfiguration,
+                                                            CodeSource codeSource) {
+
+                CompilationUnit compilationUnit = new CustomCompilationUnit(compilerConfiguration, codeSource, customVerifier, this, simpleNameToFQN);
+
+                if (transformer != null) {
+                    transformer.register(compilationUnit);
+                }
+
+                compilationUnit.addPhaseOperation(packageDetector, Phases.CANONICALIZATION);
+                compilationUnit.addPhaseOperation(emptyScriptDetector, Phases.CANONICALIZATION);
+                return compilationUnit;
+            }
+        };
     }
 
     private <M> void serializeMetadata(ScriptSource scriptSource, CompileOperation<M> extractingTransformer, File metadataDir, boolean emptyScript, boolean hasMethods) {
@@ -327,7 +350,7 @@ public class DefaultScriptCompilationHandler implements ScriptCompilationHandler
                 try {
                     scope = prepareClassLoaderScope();
                     ClassLoader loader = scope.getLocalClassLoader();
-                    scriptClass = loader.loadClass(source.getClassName()).asSubclass(scriptBaseClass);
+                    scriptClass = sharedLoader.loadClass(source.getClassName()).asSubclass(scriptBaseClass);
                 } catch (Exception e) {
                     if (scriptClassPath.isEmpty()) {
                         throw new IllegalStateException(String.format("The cache entry for %s appears to be corrupted.", source.getDisplayName()));
