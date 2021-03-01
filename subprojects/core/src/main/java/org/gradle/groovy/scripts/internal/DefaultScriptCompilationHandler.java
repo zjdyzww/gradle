@@ -62,9 +62,10 @@ import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.security.CodeSource;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 @SuppressWarnings("deprecation")
 public class DefaultScriptCompilationHandler implements ScriptCompilationHandler {
@@ -108,7 +109,8 @@ public class DefaultScriptCompilationHandler implements ScriptCompilationHandler
         logger.debug("Timing: Writing script to cache at {} took: {}", classesDir.getAbsolutePath(), clock.getElapsed());
     }
 
-    static GroovyClassLoader sharedLoader = null;
+    static Map<String, GroovyClassLoader> sharedLoaders = new HashMap<>();
+
     private void compileScript(ScriptSource source, ClassLoader classLoader, CompilerConfiguration configuration, File metadataDir,
                                final CompileOperation<?> extractingTransformer, final Action<? super ClassNode> customVerifier) {
         final Transformer transformer = extractingTransformer != null ? extractingTransformer.getTransformer() : null;
@@ -129,19 +131,17 @@ public class DefaultScriptCompilationHandler implements ScriptCompilationHandler
 
         final EmptyScriptDetector emptyScriptDetector = new EmptyScriptDetector();
         final PackageStatementDetector packageDetector = new PackageStatementDetector();
-//        if(sharedLoader == null) {
-//            sharedLoader = createLoader(classLoader, configuration, customVerifier, transformer, emptyScriptDetector, packageDetector);
-//        }
-//        GroovyClassLoader groovyClassLoader = sharedLoader;
-        GroovyClassLoader groovyClassLoader = createLoader(classLoader, configuration, customVerifier, transformer, emptyScriptDetector, packageDetector);
+        Function<String, GroovyClassLoader> loader = k -> createLoader(classLoader, configuration, customVerifier, transformer, emptyScriptDetector, packageDetector);
+        String key = transformer != null ? transformer.getClass().getSimpleName() : "no transformer";
+        GroovyClassLoader groovyClassLoader = sharedLoaders.computeIfAbsent(key, loader);
 
         groovyClassLoader.setResourceLoader(NO_OP_GROOVY_RESOURCE_LOADER);
         String scriptText = source.getResource().getText();
         String scriptName = source.getClassName();
-        GroovyCodeSource codeSource = new GroovyCodeSource(scriptText == null ? "" : scriptText, scriptName, "/groovy/script");
+//        GroovyCodeSource codeSource = new GroovyCodeSource(scriptText == null ? "" : scriptText, scriptName, "/groovy/script");
         try {
             try {
-                groovyClassLoader.parseClass(codeSource, false);
+                groovyClassLoader.parseClass(scriptText, scriptName);
             } catch (MultipleCompilationErrorsException e) {
                 wrapCompilationFailure(source, e);
             } catch (CompilationFailedException e) {
@@ -157,7 +157,6 @@ public class DefaultScriptCompilationHandler implements ScriptCompilationHandler
         }
     }
 
-    @org.jetbrains.annotations.NotNull
     private GroovyClassLoader createLoader(ClassLoader classLoader, CompilerConfiguration configuration, Action<? super ClassNode> customVerifier, Transformer transformer, EmptyScriptDetector emptyScriptDetector, PackageStatementDetector packageDetector) {
         return new GroovyClassLoader(classLoader, configuration, false) {
             @Override
@@ -350,7 +349,7 @@ public class DefaultScriptCompilationHandler implements ScriptCompilationHandler
                 try {
                     scope = prepareClassLoaderScope();
                     ClassLoader loader = scope.getLocalClassLoader();
-                    scriptClass = sharedLoader.loadClass(source.getClassName()).asSubclass(scriptBaseClass);
+                    scriptClass = loader.loadClass(source.getClassName()).asSubclass(scriptBaseClass);
                 } catch (Exception e) {
                     if (scriptClassPath.isEmpty()) {
                         throw new IllegalStateException(String.format("The cache entry for %s appears to be corrupted.", source.getDisplayName()));
