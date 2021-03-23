@@ -114,6 +114,7 @@ fun BuildType.applyDefaultSettings(os: Os = Os.LINUX, timeout: Int = 30, version
                 stopBuildOnFailure = true
             }
         }
+        javaCrash = false
     }
 
     if (os == Os.LINUX || os == Os.MACOS) {
