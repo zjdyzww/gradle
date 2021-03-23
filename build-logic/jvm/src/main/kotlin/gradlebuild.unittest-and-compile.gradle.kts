@@ -230,7 +230,7 @@ fun configureTests() {
         }
 
         useJUnitPlatform()
-        if (project.testDistributionEnabled() && !isUnitTest()) {
+        if (project.testDistributionEnabled()) {
             println("Test distribution has been enabled for $testName")
             distribution {
                 enabled.set(true)
