@@ -65,7 +65,7 @@ class FunctionalTest(
             // Use fewer parallel forks on macOs, since the agents are not very powerful.
             param("maxParallelForks", "2")
         } else {
-            param("maxParallelForks", "2")
+            param("maxParallelForks", "8")
         }
 
     }
