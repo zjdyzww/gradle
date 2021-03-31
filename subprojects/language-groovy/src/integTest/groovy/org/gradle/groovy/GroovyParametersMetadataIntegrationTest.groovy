@@ -16,15 +16,15 @@
 
 package org.gradle.groovy
 
-import org.gradle.integtests.fixtures.MultiVersionIntegrationSpec
-import org.gradle.integtests.fixtures.TargetCoverage
+import org.gradle.integtests.fixtures.AbstractIntegrationSpec
 import org.gradle.testing.fixture.GroovyCoverage
 import spock.lang.Issue
 
-@TargetCoverage({ GroovyCoverage.SUPPORTS_PARAMETERS })
-class GroovyParametersMetadataIntegrationTest extends MultiVersionIntegrationSpec {
+class GroovyParametersMetadataIntegrationTest extends AbstractIntegrationSpec {
 
-    def setup() {
+    @Issue('gradle/gradle#2487')
+    def "classes compiled with parameters option must contain metadata about method parameters on jdk8 and above"() {
+        given:
         buildFile << """
             plugins {
                 id("groovy")
@@ -35,17 +35,8 @@ class GroovyParametersMetadataIntegrationTest extends MultiVersionIntegrationSpe
             dependencies {
                 implementation "org.codehaus.groovy:groovy:${version}"
             }
-        """
-    }
-
-    @Issue('gradle/gradle#2487')
-    def "classes compiled with parameters option must contain metadata about method parameters on jdk8 and above"() {
-        given:
-        buildFile << """
-            apply plugin: "groovy"
-            ${mavenCentralRepository()}
             compileGroovy.groovyOptions.parameters = true
-        """.stripIndent()
+        """
 
 
         and: 'prepare class with method'
@@ -72,5 +63,8 @@ class GroovyParametersMetadataIntegrationTest extends MultiVersionIntegrationSpe
             .parameters
         methodParameters.size() == 1
         methodParameters[0].name == 'fullName'
+
+        where:
+        version << GroovyCoverage.SUPPORTS_PARAMETERS
     }
 }

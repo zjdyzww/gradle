@@ -17,18 +17,16 @@
 package org.gradle.groovy
 
 import org.apache.commons.lang.StringEscapeUtils
-import org.gradle.integtests.fixtures.MultiVersionIntegrationSpec
-import org.gradle.integtests.fixtures.TargetCoverage
+import org.gradle.integtests.fixtures.AbstractIntegrationSpec
 import org.gradle.test.fixtures.file.TestFile
 import org.gradle.testing.fixture.GroovyCoverage
 import org.gradle.util.VersionNumber
 import org.junit.Assume
 import spock.lang.Issue
 
-@TargetCoverage({GroovyCoverage.SUPPORTS_GROOVYDOC})
-class GroovyDocIntegrationTest extends MultiVersionIntegrationSpec {
+class GroovyDocIntegrationTest extends AbstractIntegrationSpec {
 
-    def setup() {
+    private def buildScriptWithGroovyDependency(String groovyVersion) {
         buildFile << """
             plugins {
                 id("groovy")
@@ -37,13 +35,16 @@ class GroovyDocIntegrationTest extends MultiVersionIntegrationSpec {
             ${mavenCentralRepository()}
 
             dependencies {
-                implementation "org.codehaus.groovy:groovy:${version}"
+                implementation "org.codehaus.groovy:groovy:${groovyVersion}"
             }
         """
     }
 
     @Issue("https://issues.gradle.org/browse/GRADLE-3116")
     def "can run groovydoc"() {
+        given:
+        buildScriptWithGroovyDependency(version)
+
         when:
         file("src/main/groovy/pkg/Thing.groovy") << """
             package pkg
@@ -66,10 +67,15 @@ class GroovyDocIntegrationTest extends MultiVersionIntegrationSpec {
 
         generatedBy // did match
         generatedBy[0][1] == version
+
+        where:
+        version << GroovyCoverage.SUPPORTS_GROOVYDOC
     }
 
     @Issue("https://issues.gradle.org/browse/GRADLE-3349")
     def "changes to overview causes groovydoc to be out of date"() {
+        given:
+        buildScriptWithGroovyDependency(version)
         File overviewFile = file("overview.html")
         String escapedOverviewPath = StringEscapeUtils.escapeJava(overviewFile.absolutePath)
 
@@ -106,11 +112,17 @@ class GroovyDocIntegrationTest extends MultiVersionIntegrationSpec {
         then:
         result.assertTaskNotSkipped(":groovydoc")
         overviewSummary.text.contains("Goodbye World")
+
+        where:
+        version << GroovyCoverage.SUPPORTS_GROOVYDOC
     }
 
     @Issue(["GRADLE-3174", "GRADLE-3463"])
     def "output from Groovydoc generation is logged"() {
-        Assume.assumeTrue(versionNumber < VersionNumber.parse("2.4.15"))
+        given:
+        buildScriptWithGroovyDependency(version)
+        Assume.assumeTrue(VersionNumber.parse(version) < VersionNumber.parse("2.4.15"))
+
         when:
         file("src/main/groovy/pkg/Thing.java") << """
             package pkg;
@@ -126,10 +138,15 @@ class GroovyDocIntegrationTest extends MultiVersionIntegrationSpec {
         then:
         succeeds 'groovydoc'
         outputContains '[ant:groovydoc] line 8:87: unexpected token: >'
+
+        where:
+        version << GroovyCoverage.SUPPORTS_GROOVYDOC
     }
 
     @Issue("https://github.com/gradle/gradle/issues/6168")
     def "removes stale outputs from last execution"() {
+        given:
+        buildScriptWithGroovyDependency(version)
         groovySource(file("src/main/groovy"), "pkg", "A")
         def bSource = groovySource(file("src/main/groovy"), "pkg", "B")
 
@@ -147,6 +164,9 @@ class GroovyDocIntegrationTest extends MultiVersionIntegrationSpec {
         executedAndNotSkipped(":groovydoc")
         file("build/docs/groovydoc/pkg/A.html").isFile()
         !file("build/docs/groovydoc/pkg/B.html").isFile()
+
+        where:
+        version << GroovyCoverage.SUPPORTS_GROOVYDOC
     }
 
     private static TestFile groovySource(TestFile srcDir, String packageName, String className) {
