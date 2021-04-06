@@ -22,8 +22,10 @@ import org.gradle.nativeplatform.fixtures.AvailableToolChains
 import org.gradle.nativeplatform.fixtures.AvailableToolChains.InstalledToolChain
 import org.gradle.nativeplatform.fixtures.app.CppHelloWorldApp
 import org.junit.Assume
+import spock.lang.Ignore
 import spock.lang.Unroll
 
+@Ignore
 class CppToolChainChangesIntegrationTest extends AbstractIntegrationSpec {
 
     def setup() {

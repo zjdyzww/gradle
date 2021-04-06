@@ -29,6 +29,7 @@ import static org.gradle.nativeplatform.fixtures.ToolChainRequirement.GCC_COMPAT
 
 @RequiresInstalledToolChain(GCC_COMPATIBLE)
 @Requires(TestPrecondition.NOT_WINDOWS)
+@Ignore
 class ObjectiveCLanguageIncrementalBuildIntegrationTest extends AbstractNativeLanguageIncrementalBuildIntegrationTest {
 
     @Override

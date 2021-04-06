@@ -16,9 +16,11 @@
 
 package org.gradle.infra
 
+import spock.lang.Ignore
 import spock.lang.Specification
 import spock.lang.Unroll
 
+@Ignore
 class EnvironmentVariablesPropagationTest extends Specification {
     @Unroll
     def "no sensitive env variables #value propagated to test JVMs"() {
