@@ -230,11 +230,11 @@ fun configureTests() {
         }
 
         useJUnitPlatform()
-        if (project.testDistributionEnabled() && !isUnitTest()) {
+        if (project.testDistributionEnabled()) {
             println("Test distribution has been enabled for $testName")
             distribution {
                 enabled.set(true)
-                maxLocalExecutors.set(0)
+                maxLocalExecutors.set(8)
 
                 // Dogfooding TD against ge-experiment until GE 2021.1 is available on e.grdev.net and ge.gradle.org (and the new TD Gradle plugin version 2.0 is accepted)
                 (this as TestDistributionExtensionInternal).server.set(uri("https://ge-experiment.grdev.net"))
