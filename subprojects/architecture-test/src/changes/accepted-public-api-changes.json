@@ -11,6 +11,22 @@
             "member": "Method org.gradle.api.tasks.compile.JavaCompile.getPreviousCompilationData()",
             "acceptation": "This method is for internal use only",
             "changes": []
+        },
+        {
+            "type": "org.gradle.api.tasks.compile.GroovyCompile",
+            "member": "Method org.gradle.api.tasks.compile.GroovyCompile.getSourceClassesMappingFile()",
+            "acceptation": "This was only for internal use",
+            "changes": [
+                "Method has been removed"
+            ]
+        },
+        {
+            "type": "org.gradle.api.tasks.compile.JavaCompile",
+            "member": "Method org.gradle.api.tasks.compile.JavaCompile.getSourceClassesMappingFile()",
+            "acceptation": "This was only for internal use",
+            "changes": [
+                "Method has been removed"
+            ]
         }
     ]
 }
