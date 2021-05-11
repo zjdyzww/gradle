@@ -125,6 +125,12 @@ public class ScalaBasePlugin implements Plugin<Project> {
         zinc.setDescription("The Zinc incremental compiler to be used for this Scala project.");
         jvmEcosystemUtilities.configureAsRuntimeClasspath(zinc);
 
+        // This capability is there as a workaround until Gradle 8.0 when zinc configuration can
+        // be made non-consumable. The capability prevents this configuration from clashing
+        // with other runtimeClasspath configurations when the project using this plugin is consumed
+        // as a dependency in another JVM project
+        zinc.getOutgoing().capability("org.gradle.scala:zinc:1.0");
+
         zinc.getResolutionStrategy().eachDependency(rule -> {
             if (rule.getRequested().getGroup().equals("com.typesafe.zinc") && rule.getRequested().getName().equals("zinc")) {
                 rule.useTarget("org.scala-sbt:zinc_" + DEFAULT_SCALA_ZINC_VERSION + ":" + DEFAULT_ZINC_VERSION);
