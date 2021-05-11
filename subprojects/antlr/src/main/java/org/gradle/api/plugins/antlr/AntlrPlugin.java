@@ -43,12 +43,10 @@ import java.io.File;
 public class AntlrPlugin implements Plugin<Project> {
     public static final String ANTLR_CONFIGURATION_NAME = "antlr";
     private final ObjectFactory objectFactory;
-    private final JvmEcosystemUtilities jvmEcosystemUtilities;
 
     @Inject
-    public AntlrPlugin(ObjectFactory objectFactory, JvmEcosystemUtilities jvmEcosystemUtilities) {
+    public AntlrPlugin(ObjectFactory objectFactory) {
         this.objectFactory = objectFactory;
-        this.jvmEcosystemUtilities = jvmEcosystemUtilities;
     }
 
     @Override
@@ -60,7 +58,6 @@ public class AntlrPlugin implements Plugin<Project> {
         final Configuration antlrConfiguration = project.getConfigurations().create(ANTLR_CONFIGURATION_NAME)
                 .setVisible(false)
                 .setDescription("The Antlr libraries to be used for this project.");
-        jvmEcosystemUtilities.configureAsRuntimeClasspath(antlrConfiguration);
         ((DeprecatableConfiguration) antlrConfiguration).deprecateForConsumption(deprecation -> deprecation.willBecomeAnErrorInGradle8()
             .withUpgradeGuideSection(7, "plugin_configuration_consumption"));
 
