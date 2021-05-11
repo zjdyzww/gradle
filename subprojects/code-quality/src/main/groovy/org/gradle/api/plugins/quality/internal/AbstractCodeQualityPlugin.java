@@ -30,6 +30,7 @@ import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.plugins.ReportingBasePlugin;
+import org.gradle.api.plugins.jvm.internal.JvmEcosystemUtilities;
 import org.gradle.api.plugins.quality.CodeQualityExtension;
 import org.gradle.api.reporting.ReportingExtension;
 import org.gradle.api.tasks.SourceSet;
@@ -96,6 +97,8 @@ public abstract class AbstractCodeQualityPlugin<T> implements Plugin<ProjectInte
         configuration.setVisible(false);
         configuration.setTransitive(true);
         configuration.setDescription("The " + getToolName() + " libraries to be used for this project.");
+        JvmEcosystemUtilities jvmEcosystemUtilities = project.getServices().get(JvmEcosystemUtilities.class);
+        jvmEcosystemUtilities.configureAsRuntimeClasspath(configuration);
         ((DeprecatableConfiguration) configuration).deprecateForConsumption(deprecation -> deprecation.willBecomeAnErrorInGradle8()
             .withUpgradeGuideSection(7, "plugin_configuration_consumption"));
         // Don't need these things, they're provided by the runtime
