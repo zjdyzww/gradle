@@ -27,6 +27,7 @@ import org.gradle.api.distribution.DistributionContainer;
 import org.gradle.api.distribution.plugins.DistributionPlugin;
 import org.gradle.api.file.CopySpec;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.internal.project.DefaultProject;
 import org.gradle.api.plugins.internal.DefaultApplicationPluginConvention;
 import org.gradle.api.plugins.internal.DefaultJavaApplication;
 import org.gradle.api.provider.Provider;
@@ -39,6 +40,7 @@ import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.application.CreateStartScripts;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.JavaCompile;
+import org.gradle.internal.extensibility.ExtensibleDynamicObject;
 import org.gradle.jvm.toolchain.JavaToolchainService;
 import org.gradle.jvm.toolchain.JavaToolchainSpec;
 
@@ -139,7 +141,7 @@ public class ApplicationPlugin implements Plugin<Project> {
     private ApplicationPluginConvention addConvention(Project project) {
         ApplicationPluginConvention pluginConvention = new DefaultApplicationPluginConvention(project);
         pluginConvention.setApplicationName(project.getName());
-        project.getConvention().getPlugins().put("application", pluginConvention);
+        ((ExtensibleDynamicObject)((DefaultProject)project).getAsDynamicObject()).getConvention().getPlugins().put("application", pluginConvention);
         return pluginConvention;
     }
 

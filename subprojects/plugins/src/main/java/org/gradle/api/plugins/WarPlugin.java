@@ -28,12 +28,14 @@ import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
 import org.gradle.api.internal.attributes.ImmutableAttributesFactory;
 import org.gradle.api.internal.java.WebApplication;
 import org.gradle.api.internal.plugins.DefaultArtifactPublicationSet;
+import org.gradle.api.internal.project.DefaultProject;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.internal.DefaultWarPluginConvention;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.War;
 import org.gradle.internal.deprecation.DeprecatableConfiguration;
+import org.gradle.internal.extensibility.ExtensibleDynamicObject;
 
 import javax.inject.Inject;
 import java.util.concurrent.Callable;
@@ -63,7 +65,7 @@ public class WarPlugin implements Plugin<Project> {
     public void apply(final Project project) {
         project.getPluginManager().apply(JavaPlugin.class);
         final WarPluginConvention pluginConvention = new DefaultWarPluginConvention(project);
-        project.getConvention().getPlugins().put("war", pluginConvention);
+        ((ExtensibleDynamicObject)((DefaultProject)project).getAsDynamicObject()).getConvention().getPlugins().put("war", pluginConvention);
 
         project.getTasks().withType(War.class).configureEach(task -> {
             task.getWebAppDirectory().convention(project.getLayout().dir(project.provider(() -> pluginConvention.getWebAppDir())));
