@@ -16,12 +16,12 @@
 
 package org.gradle.api.tasks.compile
 
-import groovy.test.NotYetImplemented
+
 import org.gradle.integtests.fixtures.AbstractPluginIntegrationTest
 import org.gradle.integtests.fixtures.AvailableJavaHomes
 import org.gradle.util.Requires
-import org.gradle.util.internal.Resources
 import org.gradle.util.TestPrecondition
+import org.gradle.util.internal.Resources
 import org.gradle.util.internal.TextUtil
 import org.junit.Rule
 import spock.lang.Issue
@@ -140,7 +140,7 @@ class JavaCompileIntegrationTest extends AbstractPluginIntegrationTest {
             }
         """
     }
-    
+
     @Requires(TestPrecondition.LINUX)
     def "can compile after package case-rename"() {
         buildFile << """
@@ -1016,8 +1016,6 @@ class JavaCompileIntegrationTest extends AbstractPluginIntegrationTest {
         succeeds("compileJava")
     }
 
-    // Enable deprecation nagging: https://github.com/gradle/gradle/issues/16782
-    @NotYetImplemented
     def "CompileOptions.setAnnotationProcessorGeneratedSourcesDirectory is deprecated"() {
         when:
         buildFile << """

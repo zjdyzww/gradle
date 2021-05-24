@@ -123,12 +123,11 @@ public abstract class AbstractCompile extends SourceTask {
      */
     @Deprecated
     public void setDestinationDir(Provider<File> destinationDir) {
-        // Used by Android plugin. Followup with https://github.com/gradle/gradle/issues/16782
-        /*DeprecationLogger.deprecateProperty(AbstractCompile.class, "destinationDir")
+        DeprecationLogger.deprecateProperty(AbstractCompile.class, "destinationDir")
             .replaceWith("destinationDirectory")
             .willBeRemovedInGradle8()
             .withUpgradeGuideSection(7, "compile_task_wiring")
-            .nagUser();*/
+            .nagUser();
 
         this.destinationDirectory.set(getProject().getLayout().dir(destinationDir));
     }
