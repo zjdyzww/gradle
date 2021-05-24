@@ -3,7 +3,6 @@ import common.JvmVersion
 import common.Os
 import common.VersionedSettingsBranch
 import configurations.FunctionalTest
-import configurations.StagePasses
 import jetbrains.buildServer.configs.kotlin.v2019_2.Project
 import jetbrains.buildServer.configs.kotlin.v2019_2.buildSteps.GradleBuildStep
 import jetbrains.buildServer.configs.kotlin.v2019_2.failureConditions.BuildFailureOnText
@@ -171,15 +170,6 @@ class CIConfigIntegrationTests {
                 }
             }
         }
-    }
-
-    @Test
-    fun onlyReadyForNightlyTriggerHasUpdateBranchStatus() {
-        val triggerNameToTasks = rootProject.buildTypes.map { it.id.toString() to ((it as StagePasses).steps.items[0] as GradleBuildStep).tasks }.toMap()
-        val readyForNightlyId = toTriggerId("ReadyforNightly")
-        assertEquals(":base-services:createBuildReceipt updateBranchStatus", triggerNameToTasks[readyForNightlyId])
-        val otherTaskNames = triggerNameToTasks.filterKeys { it != readyForNightlyId }.values.toSet()
-        assertEquals(setOf(":base-services:createBuildReceipt"), otherTaskNames)
     }
 
     @Test
