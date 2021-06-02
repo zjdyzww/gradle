@@ -7,6 +7,7 @@ import common.JvmVersion
 import common.Os
 import configurations.BuildDistributions
 import configurations.CompileAll
+import configurations.CompileAll2
 import configurations.FunctionalTest
 import configurations.Gradleception
 import configurations.SanityCheck
@@ -390,7 +391,7 @@ enum class SpecificBuild {
     },
     CompileAll2 {
         override fun create(model: CIBuildModel, stage: Stage): BuildType {
-            return CompileAll(model, stage)
+            return CompileAll2(model, stage)
         }
     },
     SanityCheck {
