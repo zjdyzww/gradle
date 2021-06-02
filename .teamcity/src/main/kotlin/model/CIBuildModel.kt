@@ -36,7 +36,7 @@ data class CIBuildModel(
         Stage(
             StageNames.QUICK_FEEDBACK_LINUX_ONLY,
             specificBuilds = listOf(
-                SpecificBuild.CompileAll, SpecificBuild.SanityCheck
+                SpecificBuild.CompileAll, SpecificBuild.CompileAll2, SpecificBuild.SanityCheck
             ),
             functionalTests = listOf(
                 TestCoverage(1, TestType.quick, Os.LINUX, JvmCategory.MAX_VERSION)
@@ -384,6 +384,11 @@ enum class Trigger {
 const val GRADLE_BUILD_SMOKE_TEST_NAME = "gradleBuildSmokeTest"
 enum class SpecificBuild {
     CompileAll {
+        override fun create(model: CIBuildModel, stage: Stage): BuildType {
+            return CompileAll(model, stage)
+        }
+    },
+    CompileAll2 {
         override fun create(model: CIBuildModel, stage: Stage): BuildType {
             return CompileAll(model, stage)
         }

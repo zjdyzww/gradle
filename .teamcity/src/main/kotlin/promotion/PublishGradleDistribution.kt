@@ -52,7 +52,7 @@ abstract class PublishGradleDistribution(
             script {
                 name = "PRINT_COMMIT"
                 executionMode = BuildStep.ExecutionMode.ALWAYS
-                scriptContent = """echo "%dep.${RelativeId("Check_CompileAllBuild")}.build.vcs.number%" """
+                scriptContent = """echo "%dep.${RelativeId("Check_CompileAllBuild2")}.build.vcs.number%" """
             }
 
 //            gradleWrapper {
@@ -63,7 +63,7 @@ abstract class PublishGradleDistribution(
         }
 
         dependencies {
-            snapshot(RelativeId("Check_CompileAllBuild")) {
+            snapshot(RelativeId("Check_CompileAllBuild2")) {
             }
         }
     }
