@@ -32,14 +32,14 @@ class PublishNightlySnapshot(branch: VersionedSettingsBranch) : PublishGradleDis
 
         triggers {
             schedule {
-                branch.triggeredHour()?.apply {
+//                branch.triggeredHour()?.apply {
                     schedulingPolicy = daily {
                         this.hour = 8
-                        this.minute = 5
+                        this.minute = 10
                     }
-                }
+//                }
                 triggerBuild = always()
-                withPendingChangesOnly = false
+                withPendingChangesOnly = true
 //                enabled = branch.enableTriggers
                 branchFilter = branch.branchFilter()
             }
