@@ -42,7 +42,6 @@ class PublishNightlySnapshot(branch: VersionedSettingsBranch) : PublishGradleDis
 //                        this.hour = 8
 //                        this.minute = 10
                     }
-//                }
                 triggerBuild = always()
                 withPendingChangesOnly = true
 //                enabled = branch.enableTriggers
