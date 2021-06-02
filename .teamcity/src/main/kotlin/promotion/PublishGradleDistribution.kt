@@ -16,9 +16,16 @@
 
 package promotion
 
+import common.Os
 import common.VersionedSettingsBranch
 import common.gradleWrapper
+import configurations.checkCleanAndroidUserHomeScriptUnixLike
+import configurations.checkCleanAndroidUserHomeScriptWindows
+import configurations.m2CleanScriptUnixLike
+import configurations.m2CleanScriptWindows
+import jetbrains.buildServer.configs.kotlin.v2019_2.BuildStep
 import jetbrains.buildServer.configs.kotlin.v2019_2.RelativeId
+import jetbrains.buildServer.configs.kotlin.v2019_2.buildSteps.script
 import vcsroots.gradlePromotionMaster
 
 abstract class PublishGradleDistribution(
@@ -42,11 +49,17 @@ abstract class PublishGradleDistribution(
     """.trimIndent()
 
         steps {
-            gradleWrapper {
-                name = "Promote"
-                tasks = task
-                gradleParams = """-PcommitId=%dep.${RelativeId("Check_CompileAllBuild")}.build.vcs.number% $extraParameters "-PgitUserName=$gitUserName" "-PgitUserEmail=$gitUserEmail"  """
+            script {
+                name = "PRINT_COMMIT"
+                executionMode = BuildStep.ExecutionMode.ALWAYS
+                scriptContent = """echo "%dep.${RelativeId("Check_CompileAllBuild")}.build.vcs.number%" """
             }
+
+//            gradleWrapper {
+//                name = "Promote"
+//                tasks = task
+//                gradleParams = """-PcommitId=%dep.${RelativeId("Check_CompileAllBuild")}.build.vcs.number% $extraParameters "-PgitUserName=$gitUserName" "-PgitUserEmail=$gitUserEmail"  """
+//            }
         }
 
         dependencies {
