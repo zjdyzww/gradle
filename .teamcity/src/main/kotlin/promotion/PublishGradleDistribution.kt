@@ -41,17 +41,16 @@ abstract class PublishGradleDistribution(
         **/smoke-tests/build/reports/tests/** => post-smoke-tests
     """.trimIndent()
 
-        val absoluteId = RelativeId("Check_Stage_${this@PublishGradleDistribution.triggerName}_Trigger")
         steps {
             gradleWrapper {
                 name = "Promote"
                 tasks = task
-                gradleParams = """-PcommitId=%dep.${RelativeId("Check_Stage_${this@PublishGradleDistribution.triggerName}_Trigger")}.build.vcs.number% $extraParameters "-PgitUserName=$gitUserName" "-PgitUserEmail=$gitUserEmail"  """
+                gradleParams = """-PcommitId=%dep.${RelativeId("Check_CompileAllBuild")}.build.vcs.number% $extraParameters "-PgitUserName=$gitUserName" "-PgitUserEmail=$gitUserEmail"  """
             }
         }
 
         dependencies {
-            snapshot(RelativeId("Check_Stage_${this@PublishGradleDistribution.triggerName}_Trigger")) {
+            snapshot(RelativeId("Check_CompileAllBuild")) {
             }
         }
     }
