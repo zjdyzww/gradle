@@ -227,7 +227,7 @@ fun applyDefaultDependencies(model: CIBuildModel, buildType: BuildType, notQuick
             }
         }
     }
-    if (buildType !is CompileAll) {
+    if (buildType !is CompileAll && buildType !is CompileAll2) {
         buildType.dependencies {
             compileAllDependency(CompileAll.buildTypeId(model))
         }

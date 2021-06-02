@@ -34,7 +34,7 @@ class PublishNightlySnapshot(branch: VersionedSettingsBranch) : PublishGradleDis
             schedule {
                 branch.triggeredHour()?.apply {
                     schedulingPolicy = daily {
-                        this.hour = this@apply
+                        this.hour = 8
                     }
                 }
                 triggerBuild = always()
