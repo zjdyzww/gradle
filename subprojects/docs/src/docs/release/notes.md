@@ -27,9 +27,32 @@ For Java, Groovy, Kotlin and Android compatibility, see the [full compatibility 
 <a name="VERSION-CATALOG-IMPROVEMENTS"></a>
 ### Version catalog improvements
 
+#### Declaring sub-accessors
+
 In previous Gradle releases, it wasn't possible to declare a [version catalog](userguide/platforms.html#sub:version-catalog) where an alias would also contain sub-aliases.
 For example, it wasn't possible to declare both an alias `jackson` and `jackson.xml`, you would have had to create aliases `jackson.core` and `jackson.xml`.
 This limitation is now lifted.
+
+#### Declaring plugin versions
+
+Version catalogs already supported declaring versions of your libraries, but they were not accessible to the `plugins` and `buildscript` blocks.
+This limitation is now lifted, and it's possible to declare plugins, for example in the TOML file:
+
+```toml
+[versions]
+jmh = "0.6.5"
+
+[plugins]
+jmh = { id = "me.champeau.jmh", version.ref="jmh" }
+```
+
+which allows using them in the plugins block like this:
+
+```kotlin
+plugins {
+    alias(libs.plugins.jmh)
+}
+```
 
 ================== TEMPLATE ==============================
 
