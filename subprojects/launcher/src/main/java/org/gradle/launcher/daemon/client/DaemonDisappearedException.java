@@ -24,7 +24,7 @@ public class DaemonDisappearedException extends GradleException {
 
     public static final String MESSAGE = "Gradle build daemon disappeared unexpectedly (it may have been killed or may have crashed)";
 
-    public DaemonDisappearedException() {
-        super(MESSAGE);
+    public DaemonDisappearedException(String documentationMessage) {
+        super(MESSAGE + "\n" + documentationMessage);
     }
 }

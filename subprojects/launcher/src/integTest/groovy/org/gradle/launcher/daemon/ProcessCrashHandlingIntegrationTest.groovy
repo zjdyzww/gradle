@@ -199,7 +199,7 @@ class ProcessCrashHandlingIntegrationTest extends DaemonIntegrationSpec {
         def failure = build.waitForFailure()
 
         then:
-        failure.assertHasDescription(DaemonDisappearedException.MESSAGE)
+        failure.assertHasDescription(DaemonDisappearedException.MESSAGE + "\nTroubleshooting advice:")
         failure.assertHasErrorOutput("JVM crash log found: file://")
     }
 

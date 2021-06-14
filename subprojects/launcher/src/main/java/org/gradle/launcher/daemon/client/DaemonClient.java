@@ -17,6 +17,7 @@ package org.gradle.launcher.daemon.client;
 
 import com.google.common.collect.Lists;
 import org.gradle.api.BuildCancelledException;
+import org.gradle.api.internal.DocumentationRegistry;
 import org.gradle.api.internal.specs.ExplainingSpec;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
@@ -238,9 +239,6 @@ public class DaemonClient implements BuildActionExecuter<BuildActionParameters, 
     }
 
     private Result handleDaemonDisappearance(Build build, DaemonDiagnostics diagnostics) {
-        //we can try sending something to the daemon and try out if he is really dead or use jps
-        //if he's really dead we should deregister it if it is not already deregistered.
-        //if the daemon is not dead we might continue receiving from him (and try to find the bug in messaging infrastructure)
         LOGGER.error("The message received from the daemon indicates that the daemon has disappeared."
             + "\nBuild request sent: {}"
             + "\nAttempting to read last messages from the daemon log...", build);
@@ -249,7 +247,7 @@ public class DaemonClient implements BuildActionExecuter<BuildActionParameters, 
         findCrashLogFile(build, diagnostics).ifPresent(crashLogFile ->
             LOGGER.error("JVM crash log found: " + new ConsoleRenderer().asClickableFileUrl(crashLogFile))
         );
-        throw new DaemonDisappearedException();
+        throw new DaemonDisappearedException("Troubleshooting advice: " + new DocumentationRegistry().getDocumentationFor("troubleshooting", "sec:troubleshooting_daemon_disappeared"));
     }
 
     /**
