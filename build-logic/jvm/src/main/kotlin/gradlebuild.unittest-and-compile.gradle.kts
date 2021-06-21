@@ -232,6 +232,7 @@ fun configureTests() {
         useJUnitPlatform()
 
         if (project.enableExperimentalTestFiltering() && !isUnitTest()) {
+            outputs.cacheIf { false }
             distribution {
                 enabled.set(true)
                 maxRemoteExecutors.set(0)
@@ -252,12 +253,12 @@ fun configureTests() {
 
                 if (BuildEnvironment.isCiServer) {
                     when {
-                        OperatingSystem.current().isLinux -> requirements.set(listOf("os=linux", "gbt-dogfooding"))
+                        OperatingSystem.current().isLinux -> requirements.set(listOf("os=linux", "hetzner-cloud"))
                         OperatingSystem.current().isWindows -> requirements.set(listOf("os=windows", "gbt-dogfooding"))
                         OperatingSystem.current().isMacOsX -> requirements.set(listOf("os=macos", "gbt-dogfooding"))
                     }
                 } else {
-                    requirements.set(listOf("gbt-dogfooding"))
+                    requirements.set(listOf("hetzner-cloud"))
                 }
             }
         }
