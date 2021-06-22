@@ -232,6 +232,7 @@ fun configureTests() {
         useJUnitPlatform()
 
         if (project.enableExperimentalTestFiltering() && !isUnitTest()) {
+            outputs.cacheIf { false }
             distribution {
                 enabled.set(true)
                 maxRemoteExecutors.set(0)
