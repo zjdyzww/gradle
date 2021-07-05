@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 the original author or authors.
+ * Copyright 2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,19 @@
  * limitations under the License.
  */
 
-package org.gradle.api.internal.tasks.properties;
+package org.gradle.internal.execution.steps;
 
-import org.gradle.api.GradleException;
-import org.gradle.internal.exceptions.Contextual;
+import com.google.common.collect.ImmutableCollection;
 
-@Contextual
-public class PropertyEvaluationException extends GradleException {
+import java.util.Optional;
 
-    public PropertyEvaluationException(Object work, String propertyName, Throwable cause) {
-        super(String.format("Error while evaluating property '%s' of %s", propertyName, work), cause);
+public interface ValidationContext extends AfterPreviousExecutionContext {
+    /**
+     * Returns validation warnings or {@link Optional#empty()} if there were no validation problems.
+     */
+    Optional<ValidationResult> getValidationProblems();
+
+    interface ValidationResult {
+        ImmutableCollection<String> getWarnings();
     }
 }

@@ -29,7 +29,7 @@ import static org.gradle.internal.reflect.validation.Severity.ERROR
 import static org.gradle.internal.reflect.validation.Severity.WARNING
 import static org.gradle.internal.reflect.validation.TypeValidationProblemRenderer.convertToSingleLine
 
-class ValidateStepTest extends StepSpec<BeforeExecutionContext> implements ValidationMessageChecker {
+class ValidateStepTest extends StepSpec<AfterPreviousExecutionContext> implements ValidationMessageChecker {
     private final DocumentationRegistry documentationRegistry = new DocumentationRegistry()
 
     def warningReporter = Mock(ValidateStep.ValidationWarningRecorder)
@@ -38,9 +38,9 @@ class ValidateStepTest extends StepSpec<BeforeExecutionContext> implements Valid
     def delegateResult = Mock(Result)
 
     @Override
-    protected BeforeExecutionContext createContext() {
+    protected AfterPreviousExecutionContext createContext() {
         def validationContext = new DefaultWorkValidationContext(documentationRegistry, WorkValidationContext.TypeOriginInspector.NO_OP)
-        return Stub(BeforeExecutionContext) {
+        return Stub(AfterPreviousExecutionContext) {
             getValidationContext() >> validationContext
         }
     }
@@ -53,7 +53,7 @@ class ValidateStepTest extends StepSpec<BeforeExecutionContext> implements Valid
         then:
         result == delegateResult
 
-        1 * delegate.execute(work, { ValidationFinishedContext context -> !context.validationProblems.present }) >> delegateResult
+        1 * delegate.execute(work, { ValidationContext context -> !context.validationProblems.present }) >> delegateResult
         _ * work.validate(_ as  WorkValidationContext) >> { validated = true }
 
         then:
@@ -140,7 +140,7 @@ class ValidateStepTest extends StepSpec<BeforeExecutionContext> implements Valid
         1 * virtualFileSystem.invalidateAll()
 
         then:
-        1 * delegate.execute(work, { ValidationFinishedContext context -> context.validationProblems.get().warnings == [expectedWarning] })
+        1 * delegate.execute(work, { ValidationContext context -> context.validationProblems.get().warnings == [expectedWarning] })
         0 * _
     }
 

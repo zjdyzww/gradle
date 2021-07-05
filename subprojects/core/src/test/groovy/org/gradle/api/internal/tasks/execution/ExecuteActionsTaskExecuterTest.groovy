@@ -160,8 +160,8 @@ class ExecuteActionsTaskExecuterTest extends Specification {
         new AssignWorkspaceStep<>(
         new LoadExecutionStateStep<>(
         new SkipEmptyWorkStep<>(
-        new CaptureStateBeforeExecutionStep(buildOperationExecutor, classloaderHierarchyHasher, outputSnapshotter, overlappingOutputDetector,
         new ValidateStep<>(virtualFileSystem, validationWarningReporter,
+        new CaptureStateBeforeExecutionStep(buildOperationExecutor, classloaderHierarchyHasher, outputSnapshotter, overlappingOutputDetector,
         new ResolveCachingStateStep(buildCacheController, false,
         new ResolveChangesStep<>(changeDetector,
         new SkipUpToDateStep<>(
