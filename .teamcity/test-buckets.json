@@ -12075,15 +12075,14 @@
 					"tooling-api-builders",
 					"build-option",
 					"hashing",
-					"plugins",
-					"execution"
+					"execution",
+					"resources-http"
 				]
 			},
 			{
 				"enableTD":false,
 				"subprojects":[
 					"kotlin-dsl-tooling-builders",
-					"resources-http",
 					"internal-integ-testing",
 					"internal-performance-testing",
 					"jvm-services",
@@ -12092,14 +12091,14 @@
 					"base-services",
 					"publish",
 					"messaging",
-					"platform-jvm"
+					"platform-jvm",
+					"build-profile"
 				]
 			},
 			{
 				"enableTD":false,
 				"subprojects":[
 					"launcher",
-					"build-profile",
 					"tooling-native",
 					"ear",
 					"resources-gcs",
@@ -12108,14 +12107,14 @@
 					"build-events",
 					"core-api",
 					"testing-base",
-					"build-cache-http"
+					"build-cache-http",
+					"reporting"
 				]
 			},
 			{
 				"enableTD":false,
 				"subprojects":[
 					"plugin-use",
-					"reporting",
 					"signing",
 					"model-groovy",
 					"antlr",
