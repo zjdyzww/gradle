@@ -163,7 +163,7 @@ public class NativeServices extends DefaultServiceRegistry implements ServiceReg
 
     private void initializeNativeIntegrations(File userHomeDir) {
         this.userHomeDir = userHomeDir;
-        useNativeIntegrations = "true".equalsIgnoreCase(System.getProperty("org.gradle.native", "true"));
+        useNativeIntegrations = false; //"true".equalsIgnoreCase(System.getProperty("org.gradle.native", "true"));
         if (useNativeIntegrations) {
             nativeBaseDir = getNativeServicesDir(userHomeDir).getAbsoluteFile();
             try {
