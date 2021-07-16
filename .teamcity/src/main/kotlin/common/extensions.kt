@@ -125,10 +125,6 @@ fun BuildType.paramsForBuildToolBuild(buildJvm: Jvm = BuildToolBuildJvm, os: Os)
         param("env.GRADLE_OPTS", "-Xmx1536m -XX:MaxPermSize=384m")
         param("env.ANDROID_HOME", os.androidHome)
         param("env.ANDROID_SDK_ROOT", os.androidHome)
-        if (os == Os.MACOS) {
-            // Use fewer parallel forks on macOs, since the agents are not very powerful.
-            param("maxParallelForks", "2")
-        }
         if (os == Os.LINUX || os == Os.MACOS) {
             param("env.LC_ALL", "en_US.UTF-8")
         }
@@ -148,8 +144,9 @@ fun buildToolGradleParameters(daemon: Boolean = true, isContinue: Boolean = true
         // We pass the 'maxParallelForks' setting as 'workers.max' to limit the maximum number of executers even
         // if multiple test tasks run in parallel. We also pass it to the Gradle build as a maximum (maxParallelForks)
         // for each test task, such that we are independent of whatever default value is defined in the build itself.
-        "-Dorg.gradle.workers.max=%maxParallelForks%",
-        "-PmaxParallelForks=%maxParallelForks%",
+        // It's defined here: https://github.com/gradle/dev-infrastructure/blob/edfd4d53456edf7651fccc778d1004e7393c6a01/salt/common/build-agents/buildAgent.properties#L54
+        "-Dorg.gradle.workers.max=%env.GBT_MAX_WORKERS%",
+        "-PmaxParallelForks=%env.GBT_MAX_WORKERS%",
         "-s",
         if (daemon) "--daemon" else "--no-daemon",
         if (isContinue) "--continue" else ""
@@ -179,7 +176,8 @@ fun functionalTestExtraParameters(buildScanTag: String, os: Os, testJvmVersion: 
     )
     return (listOf(
         "-PtestJavaVersion=$testJvmVersion",
-        "-PtestJavaVendor=$testJvmVendor") +
+        "-PtestJavaVendor=$testJvmVendor"
+    ) +
         listOf(buildScanTag(buildScanTag)) +
         buildScanValues.map { buildScanCustomValue(it.key, it.value) }
         ).filter { it.isNotBlank() }.joinToString(separator = " ")
