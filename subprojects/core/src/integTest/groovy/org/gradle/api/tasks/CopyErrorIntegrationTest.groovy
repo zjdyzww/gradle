@@ -23,6 +23,7 @@ import org.gradle.util.Requires
 import org.gradle.util.TestPrecondition
 import org.hamcrest.CoreMatchers
 import org.junit.Assert
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -77,6 +78,7 @@ The following types/formats are supported:
         failure.assertHasCause("Couldn't follow symbolic link '${link}'.")
     }
 
+    @Ignore("FIXME wolfs - we need to decide what should happen here")
     @Test
     @Requires(TestPrecondition.FILE_PERMISSIONS)
     void reportsUnreadableSourceDir() {
