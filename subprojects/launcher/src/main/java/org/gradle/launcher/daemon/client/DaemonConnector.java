@@ -61,6 +61,13 @@ public interface DaemonConnector {
     DaemonClientConnection connect(ExplainingSpec<DaemonContext> constraint);
 
     /**
+     * Connects to a daemon that matches the given constraint, starting one if required.
+     *
+     * @return A connection to a matching daemon. Never returns null.
+     */
+    DaemonClientConnection connect(ExplainingSpec<DaemonContext> constraint, DaemonConnectorListener listener);
+
+    /**
      * Starts a new daemon and returns a connection to it.
      */
     DaemonClientConnection startDaemon(ExplainingSpec<DaemonContext> constraint);

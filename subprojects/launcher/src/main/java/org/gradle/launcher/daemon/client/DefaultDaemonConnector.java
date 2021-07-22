@@ -117,6 +117,11 @@ public class DefaultDaemonConnector implements DaemonConnector {
 
     @Override
     public DaemonClientConnection connect(ExplainingSpec<DaemonContext> constraint) {
+        return connect(constraint, DaemonConnectorListener.NOOP);
+    }
+
+    @Override
+    public DaemonClientConnection connect(ExplainingSpec<DaemonContext> constraint, DaemonConnectorListener daemonConnectorListener) {
         final Pair<Collection<DaemonInfo>, Collection<DaemonInfo>> idleBusy = partitionByState(daemonRegistry.getAll(), Idle);
         final Collection<DaemonInfo> idleDaemons = idleBusy.getLeft();
         final Collection<DaemonInfo> busyDaemons = idleBusy.getRight();
@@ -135,7 +140,9 @@ public class DefaultDaemonConnector implements DaemonConnector {
 
         // No compatible daemons available - start a new daemon
         handleStopEvents(idleDaemons, busyDaemons);
-        return startDaemon(constraint);
+        DaemonClientConnection result = startDaemon(constraint);
+        daemonConnectorListener.newDaemonStarted(result);
+        return result;
     }
 
     private void handleStopEvents(Collection<DaemonInfo> idleDaemons, Collection<DaemonInfo> busyDaemons) {
