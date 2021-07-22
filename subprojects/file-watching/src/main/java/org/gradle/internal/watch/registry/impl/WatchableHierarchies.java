@@ -53,6 +53,15 @@ public class WatchableHierarchies {
         this.watchFilter = watchFilter;
     }
 
+    private boolean isUnsupportedForWatching(String absolutePath) {
+        return watchableFileSystemDetector.detectUnsupportedFileSystems()
+            .anyMatch(fileSystemInfo -> {
+                String mountPoint = fileSystemInfo.getMountPoint().getAbsolutePath();
+                return mountPoint.equals(absolutePath)
+                    || absolutePath.startsWith(mountPoint) && absolutePath.charAt(mountPoint.length()) == File.separatorChar;
+            });
+    }
+
     public void registerWatchableHierarchy(File watchableHierarchy, SnapshotHierarchy root) {
         Path watchableHierarchyPath = watchableHierarchy.toPath().toAbsolutePath();
         String watchableHierarchyPathString = watchableHierarchyPath.toString();
@@ -63,9 +72,11 @@ public class WatchableHierarchies {
             ));
         }
         if (!watchableHierarchies.contains(watchableHierarchyPathString)) {
-            checkThatNothingExistsInNewWatchableHierarchy(watchableHierarchyPathString, root);
-            recentlyUsedHierarchies.addFirst(watchableHierarchyPath);
-            watchableHierarchies = watchableHierarchies.plus(watchableHierarchy);
+            if (!isUnsupportedForWatching(watchableHierarchyPathString)) {
+                checkThatNothingExistsInNewWatchableHierarchy(watchableHierarchyPathString, root);
+                recentlyUsedHierarchies.addFirst(watchableHierarchyPath);
+                watchableHierarchies = watchableHierarchies.plus(watchableHierarchy);
+            }
         } else {
             recentlyUsedHierarchies.remove(watchableHierarchyPath);
             recentlyUsedHierarchies.addFirst(watchableHierarchyPath);
