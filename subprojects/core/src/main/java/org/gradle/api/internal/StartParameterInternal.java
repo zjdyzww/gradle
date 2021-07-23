@@ -191,19 +191,6 @@ public class StartParameterInternal extends StartParameter {
         this.configurationCacheQuiet = configurationCacheQuiet;
     }
 
-    public boolean addTaskNames(Iterable<String> taskPaths) {
-        Set<String> allTasks = newLinkedHashSet(getTaskNames());
-        boolean added = allTasks.addAll(
-            taskPaths instanceof Collection
-                ? uncheckedCast(taskPaths)
-                : newArrayList(taskPaths)
-        );
-        if (added) {
-            setTaskNames(allTasks);
-        }
-        return added;
-    }
-
     /**
      * The following special behavior wrt. how the build root is discovered, is implemented:
      * - If the current folder is called 'buildSrc', we do not search upwards for a settings file
