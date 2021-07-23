@@ -48,25 +48,45 @@ class GradleRunnerSupportedBuildJvmIntegrationTest extends BaseGradleRunnerInteg
         jdk << AvailableJavaHomes.getJdks("1.5", "1.6", "1.7")
     }
 
-
-    @Issue("https://github.com/gradle/gradle/issues/13957")
     @NoDebug
+    @Issue("https://github.com/gradle/gradle/issues/13957")
     @Requires(adhoc = { AvailableJavaHomes.getJdks("1.8") })
     def "supports failing builds on older Java versions"() {
         given:
-        testDirectory.file("gradle.properties").writeProperties("org.gradle.java.home": jdk.javaHome.absolutePath)
-        buildFile << """
+        testDirectory.file("gradle.properties")
+            .writeProperties("org.gradle.java.home": jdk.javaHome.absolutePath)
+
+        buildFile << '''
             task myTask {
                 doLast {
-                    throw new RuntimeException("Boom")
+                    println "Running gradle version: ${gradle.gradleVersion}"
+                    throw new RuntimeException("Boom!")
                 }
             }
-        """
+        '''
 
-        expect:
-        runner().withArguments("myTask").buildAndFail()
+        when:
+        def build = runner()
+            .tap {
+                if (buildToolVersion != 'LATEST') {
+                    withGradleVersion(buildToolVersion)
+                }
+            }
+            .forwardOutput()
+            .withArguments("myTask")
+
+        then:
+        build.buildAndFail().output.tap {
+            if (buildToolVersion != 'LATEST') {
+                contains("Running gradle version ${buildToolVersion}")
+            }
+            contains("Boom!")
+        }
 
         where:
-        jdk << AvailableJavaHomes.getJdks("1.8")
+        [buildToolVersion, jdk] << [
+            ['2.6', '2.7', '2.8', '2.9', '2.11', '2.12', '2.13', '2.14.1', '3.0', '3.1', '3.2.1', '3.3', '3.4.1', '3.5.1', '4.0.2', '4.1', '4.2.1', '4.3.1', '4.4.1', '4.5.1', '4.6', '4.7', '4.8.1', '4.9', '4.10.3', '5.0', '5.1.1', '5.2.1', '5.3.1', '5.4.1', '5.5.1', '5.6.4', '6.0.1', '6.1.1', '6.2.2', '6.3', '6.4.1', '6.5.1', '6.6.1', '6.7.1', '6.8.3', '6.9', '7.0.2', '7.1.1', 'LATEST'],
+            AvailableJavaHomes.getJdks('1.8')
+        ].combinations()
     }
 }
