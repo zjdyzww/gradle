@@ -22,6 +22,9 @@ import org.gradle.internal.classloader.FilteringClassLoader;
 import org.gradle.internal.classloader.VisitableURLClassLoader;
 import org.gradle.internal.classpath.ClassPath;
 import org.gradle.internal.logging.progress.ProgressLoggerFactory;
+import org.gradle.internal.serialize.ExceptionPlaceholder;
+import org.gradle.internal.serialize.StackTraceElementPlaceholder;
+import org.gradle.internal.serialize.TopLevelExceptionPlaceholder;
 import org.gradle.internal.service.DefaultServiceLocator;
 import org.gradle.internal.service.ServiceLocator;
 import org.gradle.tooling.GradleConnectionException;
@@ -112,8 +115,19 @@ public class DefaultToolingImplementationLoader implements ToolingImplementation
         ClassPath implementationClasspath = distribution.getToolingImplementationClasspath(progressLoggerFactory, progressListener, connectionParameters, cancellationToken);
         LOGGER.debug("Using tooling provider classpath: {}", implementationClasspath);
         FilteringClassLoader.Spec filterSpec = new FilteringClassLoader.Spec();
+
         filterSpec.allowPackage("org.gradle.tooling.internal.protocol");
+        filterSpec.allowPackage("org.gradle.tooling.internal.provider");
+        filterSpec.allowPackage("org.gradle.internal.serialize");
+
+        // Use the latest to make sure old Gradle versions still contain the latest Java versions
         filterSpec.allowClass(JavaVersion.class);
+
+        // Make sure Exceptions are serializable across Java & Gradle versions
+        filterSpec.allowClass(ExceptionPlaceholder.class);
+        filterSpec.allowClass(TopLevelExceptionPlaceholder.class);
+        filterSpec.allowClass(StackTraceElementPlaceholder.class);
+
         FilteringClassLoader filteringClassLoader = new FilteringClassLoader(classLoader, filterSpec);
         return new VisitableURLClassLoader("tooling-implementation-loader", filteringClassLoader, implementationClasspath);
     }

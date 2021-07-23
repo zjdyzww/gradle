@@ -43,7 +43,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-class ExceptionPlaceholder implements Serializable {
+public class ExceptionPlaceholder implements Serializable {
     private static final Set<String> CANDIDATE_GET_CAUSES = Collections.unmodifiableSet(
         new HashSet<String>() {{
             add("getCauses");
