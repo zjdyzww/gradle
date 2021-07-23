@@ -43,6 +43,9 @@ class ThirdPartyGradleModuleMetadataSmokeTest extends AbstractSmokeTest {
 
         when:
         buildFile = new File(testProjectDir.root, "producer/${defaultBuildFileName}.kts")
+        new File(testProjectDir.root, "producer/gradle.properties")<< """
+org.gradle.jvmargs=--illegal-access=permit -Dkotlin.daemon.jvm.options=--illegal-access=permit
+"""
         replaceVariablesInBuildFile(
             kotlinVersion: kotlinVersion,
             androidPluginVersion: androidPluginVersion)

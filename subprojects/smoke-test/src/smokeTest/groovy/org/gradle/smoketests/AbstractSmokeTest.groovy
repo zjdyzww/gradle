@@ -242,9 +242,9 @@ abstract class AbstractSmokeTest extends Specification {
             .withArguments(
                 tasks.toList() + outputParameters() + repoMirrorParameters() + configurationCacheParameters()
             ) as DefaultGradleRunner
-        gradleRunner.withJvmArguments(["-Xmx8g", "-XX:MaxMetaspaceSize=1024m", "-XX:+HeapDumpOnOutOfMemoryError",
-            "--illegal-access=permit", "-Dkotlin.daemon.jvm.options=--illegal-access=permit"
-        ])
+//        gradleRunner.withJvmArguments(["-Xmx8g", "-XX:MaxMetaspaceSize=1024m", "-XX:+HeapDumpOnOutOfMemoryError"
+//            "--illegal-access=permit", "-Dkotlin.daemon.jvm.options=--illegal-access=permit"
+//        ])
         return new SmokeTestGradleRunner(gradleRunner)
     }
 
