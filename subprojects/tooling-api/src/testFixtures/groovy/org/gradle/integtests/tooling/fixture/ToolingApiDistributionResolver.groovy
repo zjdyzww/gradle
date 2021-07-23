@@ -18,6 +18,7 @@ package org.gradle.integtests.tooling.fixture
 
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.Dependency
+import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 import org.gradle.api.internal.artifacts.DependencyResolutionServices
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.integtests.fixtures.RepoScriptBlockUtil
@@ -64,6 +65,11 @@ class ToolingApiDistributionResolver {
     }
 
     private Collection<File> resolveDependency(String dependency) {
+        resolutionServices.getResolveRepositoryHandler().each {
+            if (it instanceof MavenArtifactRepository) {
+                println((it as MavenArtifactRepository).url)
+            }
+        }
         Dependency dep = resolutionServices.dependencyHandler.create(dependency)
         Configuration config = resolutionServices.configurationContainer.detachedConfiguration(dep)
         config.resolutionStrategy.disableDependencyVerification()
