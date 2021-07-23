@@ -43,7 +43,7 @@ class ThirdPartyGradleModuleMetadataSmokeTest extends AbstractSmokeTest {
 
         when:
         buildFile = new File(testProjectDir.root, "producer/${defaultBuildFileName}.kts")
-        new File(testProjectDir.root, "producer/gradle.properties")<< """
+        new File(testProjectDir.root, "producer/gradle.properties") << """
 org.gradle.jvmargs=--illegal-access=permit -Dkotlin.daemon.jvm.options=--illegal-access=permit
 """
         replaceVariablesInBuildFile(
@@ -133,7 +133,7 @@ org.gradle.jvmargs=--illegal-access=permit -Dkotlin.daemon.jvm.options=--illegal
         }
         r.withProjectDir(new File(testProjectDir.root, 'producer'))
             .forwardOutput()
-            // this deprecation is coming from the Kotlin plugin
+        // this deprecation is coming from the Kotlin plugin
             .expectDeprecationWarning("The AbstractCompile.destinationDir property has been deprecated. " +
                 "This is scheduled to be removed in Gradle 8.0. " +
                 "Please use the destinationDirectory property instead. " +
@@ -144,7 +144,9 @@ org.gradle.jvmargs=--illegal-access=permit -Dkotlin.daemon.jvm.options=--illegal
 
     private BuildResult consumer(String runTask) {
         runner(runTask, '-q').withProjectDir(
-            new File(testProjectDir.root, 'consumer')).forwardOutput().build()
+            new File(testProjectDir.root, 'consumer'))
+            .withJvmArguments("--illegal-access=permit", "-Dkotlin.daemon.jvm.options=--illegal-access=permit")
+            .forwardOutput().build()
     }
 
     // Reevaluate if this is still needed when upgrading android plugin. Currently required with version 4.2.2
