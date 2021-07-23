@@ -67,7 +67,7 @@ class ToolingApiDistributionResolver {
     private Collection<File> resolveDependency(String dependency) {
         resolutionServices.getResolveRepositoryHandler().each {
             if (it instanceof MavenArtifactRepository) {
-                println((it as MavenArtifactRepository).url)
+                throw new Exception((it as MavenArtifactRepository).url.toString())
             }
         }
         Dependency dep = resolutionServices.dependencyHandler.create(dependency)
