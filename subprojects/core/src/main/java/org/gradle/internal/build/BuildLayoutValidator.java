@@ -62,14 +62,14 @@ public class BuildLayoutValidator {
             message.append("The project directory '");
             message.append(startParameter.getCurrentDir());
             message.append("' does not contain a Gradle build.\n\n");
-            message.append("A Gradle build should contain a `settings.gradle` or `settings.gradle.kts` file.\n");
-            message.append("It may also contain a `build.gradle` or `build.gradle.kts` file.\n");
+            message.append("A Gradle build should contain a 'settings.gradle' or 'settings.gradle.kts' file. ");
+            message.append("It may also contain a 'build.gradle' or 'build.gradle.kts' file.\n");
             message.append("For more details on creating a Gradle build see ");
             message.append(documentationRegistry.getDocumentationFor("tutorial_using_tasks")); // this is the "build script basics" chapter, we're missing some kind of "how to write a Gradle build chapter"
             message.append("\n\n");
-            message.append("You can run `");
+            message.append("You can run '");
             clientMetaData.describeCommand(message, "init");
-            message.append("` to create a new Gradle build.\n");
+            message.append("' to create a new Gradle build.\n");
             message.append("For more details on the `init` task see ");
             message.append(documentationRegistry.getDocumentationFor("build_init_plugin"));
             throw new BuildLayoutException(message.toString());
@@ -83,7 +83,7 @@ public class BuildLayoutValidator {
 
         @Override
         public void appendResolution(StyledTextOutput output, BuildClientMetaData clientMetaData) {
-            output.text("Run ");
+            output.text("> Run ");
             clientMetaData.describeCommand(output.withStyle(UserInput), "init");
             output.text(" to create a new Gradle build.");
         }

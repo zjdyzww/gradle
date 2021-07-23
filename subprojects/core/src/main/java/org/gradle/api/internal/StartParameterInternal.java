@@ -25,14 +25,9 @@ import org.gradle.internal.watch.vfs.WatchMode;
 
 import javax.annotation.Nullable;
 import java.io.File;
-import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Sets.newLinkedHashSet;
 import static org.gradle.api.internal.SettingsInternal.BUILD_SRC;
-import static org.gradle.internal.Cast.uncheckedCast;
 
 public class StartParameterInternal extends StartParameter {
     private WatchMode watchFileSystemMode = WatchMode.DEFAULT;
