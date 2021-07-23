@@ -19,7 +19,6 @@ package org.gradle.internal.exceptions;
 import org.gradle.initialization.BuildClientMetaData;
 import org.gradle.internal.logging.text.StyledTextOutput;
 
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
